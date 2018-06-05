@@ -1,5 +1,5 @@
 {
-  "name": "common-utils",
+  "name": "@storyous/common-utils",
   "version": "1.0.0",
   "description": "Common utils for storyous microservices",
   "main": "index.js",
@@ -19,7 +19,6 @@
     "@storyous/winston-gelf": "0.0.3",
     "lodash": "^4.17.10",
     "mongodb": "^3.1.0-beta4",
-    "nconf": "^0.10.0",
     "prom-client": "^11.0.0",
     "winston": "^2.4.2",
     "winston-raven-sentry": "git+https://git@github.com/stanogurnik/winston-raven-sentry.git#bleeding-edge"
