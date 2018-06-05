@@ -1,8 +1,8 @@
 {
   "name": "@storyous/common-utils",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Common utils for storyous microservices",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/_mocha --recursive ./tests",
     "lint": "eslint lib"
