@@ -30,7 +30,10 @@ describe('Configurator', function() {
                     keepScalar: 'hi',
                     nullMe: 'foo',
                     replaceMe: 'old'
-                }
+                },
+                array: [
+                    { name: 'foo' }
+                ]
             };
 
             const newObject = {
@@ -39,7 +42,10 @@ describe('Configurator', function() {
                 toBeMerged: {
                     nullMe: null,
                     replaceMe: 'new'
-                }
+                },
+                array: [
+                    { name: 'bar' }
+                ]
             };
 
             config._merge(newObject, defaults);
@@ -53,7 +59,10 @@ describe('Configurator', function() {
                     keepScalar: 'hi',
                     nullMe: null,
                     replaceMe: 'new'
-                }
+                },
+                array: [
+                    { name: 'bar' }
+                ]
             };
 
             assert.deepEqual(defaults, expected, 'should be equal');
