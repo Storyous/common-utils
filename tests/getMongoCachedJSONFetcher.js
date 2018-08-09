@@ -14,7 +14,7 @@ const {
 } = require('mocha');
 
 
-describe('getMongoCachedFilFetcher', () => {
+describe('getMongoCachedJSONFetcher', () => {
 
     const fileUrl = 'http://127.0.0.1:3011/file.json';
 
