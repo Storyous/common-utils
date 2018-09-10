@@ -33,7 +33,7 @@
     "eslint-plugin-import": "^2.12.0",
     "mocha": "^5.2.0",
     "mocked-server": "^2.1.0",
-    "sinon": "^5.0.7",
+    "sinon": "^5.1.1",
     "supertest": "^3.1.0"
   },
   "engines": {

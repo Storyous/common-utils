@@ -4,6 +4,7 @@ const getTestDatabase = require('./getTestDatabase');
 const getMongoCachedJSONFetcher = require('../lib/getMongoCachedJSONFetcher');
 const MockedServer = require('mocked-server');
 const assert = require('assert');
+const sinon = require('sinon');
 const {
     it,
     describe,
@@ -26,9 +27,11 @@ describe('getMongoCachedJSONFetcher', () => {
 
     let countOfRequests = 0;
 
-    before(async () => {
+    const cleanCache = () => collection.removeMany({});
+
+    beforeEach(async () => {
         collection = (await getTestDatabase()).db.collection('cachedFiles');
-        await collection.removeMany({});
+        await cleanCache();
     });
 
     before((next) => {
@@ -163,5 +166,85 @@ describe('getMongoCachedJSONFetcher', () => {
             assert.equal(countOfRequests, 1, 'There should be only one server call to standard handler.');
         }
     );
+
+    describe('transform option', () => {
+
+        it('should use the function to map the JSON content', async () => {
+
+            const transformedContent = {
+                mappedFile: true
+            };
+
+            const transform = async (content) => {
+                assert.deepEqual(content, fileContent);
+                return transformedContent;
+            };
+
+            const fetchTheJson = getMongoCachedJSONFetcher(fileUrl, collection, {
+                cacheLifetime: 10000,
+                transform
+            });
+
+            const file = await fetchTheJson();
+            assert.deepEqual(file, transformedContent);
+        });
+
+        it('should propagate exception when no cached version available and the call fails', async () => {
+
+            const error = new Error('Error during transformation');
+
+            const transform = () => {
+                throw error;
+            };
+
+            const fetchTheJson = getMongoCachedJSONFetcher(fileUrl, collection, {
+                cacheLifetime: 10000,
+                transform
+            });
+
+            try {
+                await fetchTheJson();
+                throw new Error('This should not happend');
+
+            } catch (err) {
+                assert.equal(err, error);
+            }
+
+        });
+
+        it('should use cached version when the function throws an exception', async () => {
+
+            let called = false;
+
+            const transformedContent = {
+                mappedFile: true
+            };
+
+            const transform = sinon.spy(async (content) => {
+                assert.deepEqual(content, fileContent);
+
+                if (!called) {
+                    called = true;
+                    return transformedContent;
+                }
+
+                throw new Error('Error during transformation');
+            });
+
+            const fetchTheJson = getMongoCachedJSONFetcher(fileUrl, collection, {
+                cacheLifetime: -1,
+                transform
+            });
+
+            const firstResult = await fetchTheJson();
+            assert.deepEqual(firstResult, transformedContent);
+
+            const secondResult = await fetchTheJson();
+            assert.deepEqual(secondResult, transformedContent);
+
+            assert.equal(transform.callCount, 2, 'The transform should be called twice.');
+        });
+
+    });
 
 });
