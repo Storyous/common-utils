@@ -22,6 +22,12 @@ module.exports = {
             dsn: process.env.SENTRY_DSN || '',
             silent: true,
             level: 'error'
+        },
+        loggly: {
+            silent: true,
+            token: process.env.LOGGLY_TOKEN || '',
+            subdomain: 'storyous',
+            json: true
         }
     }
 };
