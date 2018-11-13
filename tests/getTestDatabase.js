@@ -6,8 +6,10 @@ const { after } = require('mocha');
 let connectPromise;
 
 after(() => {
-    console.log('Disconnecting from the database');
-    db.db.close();
+    if (db.db) {
+        console.log('Disconnecting from the database');
+        db.db.close();
+    }
 });
 
 module.exports = async () => {
