@@ -4,7 +4,7 @@ const { describe, it } = require('mocha');
 const assert = require('assert');
 const validator = require('../lib/requestValidator');
 
-describe.only('requestValidator', () => {
+describe('requestValidator', () => {
 
     describe('decimalNumber', () => {
 
