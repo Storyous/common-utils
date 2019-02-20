@@ -6,9 +6,9 @@ const { after } = require('mocha');
 let connectPromise;
 
 after(() => {
-    if (db.db) {
+    if (db.client) {
         console.log('Disconnecting from the database');
-        db.db.close();
+        db.client.close();
     }
 });
 
