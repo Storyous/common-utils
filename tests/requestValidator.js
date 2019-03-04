@@ -28,4 +28,20 @@ describe('requestValidator', () => {
 
     });
 
+    describe('date', () => {
+
+        it('should work', () => {
+
+            // valid cases
+            ['2018-08-03T14:59:46Z', '2018-08-03T14:59:46+0100'].forEach((date) => {
+                assert((validator.date(date)) instanceof Date);
+            });
+
+            // invalid cases
+            ['2018-08-03T14:59:46', '2018-08-03T14:59:46+0100X', '2013-99-99T04:13:00+00:00'].forEach((date) => {
+                assert.throws(() => validator.date(date));
+            });
+        });
+    });
+
 });
