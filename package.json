@@ -1,6 +1,6 @@
 {
   "name": "@storyous/common-utils",
-  "version": "6.7.0",
+  "version": "6.7.1",
   "description": "Common utils for storyous microservices",
   "main": "lib/index.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "@storyous/winston-gelf": "0.0.3",
     "@storyous/winston-raven-sentry": "2.1.0",
     "handlebars": "^4.0.11",
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.11",
     "moment": "^2.24.0",
     "mongodb": "^3.1.13",
     "node-fetch": "^2.2.0",
