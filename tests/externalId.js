@@ -32,4 +32,8 @@ describe('External Ids', () => {
         const decoded = ID.decode(encoded);
         assert.equal(decoded, expectedPlain);
     });
+
+    it('should throw an AppError, when pass wrong argument', () => {
+        assert.throws(() => (ID.encode('someString', 'p')), {});
+    });
 });
