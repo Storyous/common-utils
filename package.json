@@ -4,8 +4,9 @@
   "description": "Common utils for storyous microservices",
   "main": "lib/index.js",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/_mocha --recursive ./tests",
-    "lint": "eslint lib"
+    "test": "npm run test:lint && npm run test:mocha",
+    "test:mocha": "node ./node_modules/mocha/bin/_mocha --recursive ./tests",
+    "test:lint": "eslint lib"
   },
   "keywords": [
     "utils",
@@ -20,6 +21,7 @@
     "@storyous/winston-raven-sentry": "2.1.0",
     "handlebars": "^4.0.11",
     "lodash": "^4.17.11",
+    "migrate": "^1.6.2",
     "moment": "^2.24.0",
     "mongodb": "^3.1.13",
     "node-fetch": "^2.2.0",
