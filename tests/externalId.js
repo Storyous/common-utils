@@ -9,7 +9,7 @@ describe('External Ids', () => {
 
     it('should be able to encode/decode external id', () => {
 
-        const expectedPlain = 1231;
+        const expectedPlain = '1231';
         const expectedEncoded = '7cW9wazJv';
 
         const encoded = ID.encode(expectedPlain);
