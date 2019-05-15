@@ -53,7 +53,7 @@ describe('fetch', () => {
         assert.deepStrictEqual(await response.json(), { ok: false });
     });
 
-    describe('fetch.json', function () {
+    describe('fetch.json', () => {
 
         it('should be possible to fetch json', async () => {
             server.endpoint.handleNext(withResponse(200, '{"ok": true}'));
@@ -72,7 +72,7 @@ describe('fetch', () => {
         });
     });
 
-    describe('fetch.text', function () {
+    describe('fetch.text', () => {
 
         it('should be possible to fetch text', async () => {
             server.endpoint.handleNext(withResponse(200, 'Aaa'));
