@@ -5,14 +5,7 @@ const getMongoCachedJSONFetcher = require('../lib/getMongoCachedJSONFetcher');
 const MockedServer = require('mocked-server');
 const assert = require('assert');
 const sinon = require('sinon');
-const {
-    it,
-    describe,
-    before,
-    beforeEach,
-    after,
-    afterEach
-} = require('mocha');
+const { it, describe, beforeEach } = require('mocha');
 
 
 describe('getMongoCachedJSONFetcher', () => {
@@ -21,11 +14,14 @@ describe('getMongoCachedJSONFetcher', () => {
 
     let fileContent;
 
-    let mockedFileServer;
+    const mockedFileServer = new MockedServer(fileUrl);
+    let countOfRequests = 0;
+    mockedFileServer.handle('GET', '/file.json', (ctx) => {
+        countOfRequests++;
+        ctx.body = fileContent;
+    });
 
     let collection;
-
-    let countOfRequests = 0;
 
     const cleanCache = () => collection.removeMany({});
 
@@ -34,25 +30,9 @@ describe('getMongoCachedJSONFetcher', () => {
         await cleanCache();
     });
 
-    before((next) => {
-        mockedFileServer = new MockedServer(fileUrl, next);
-        mockedFileServer.handle('GET', '/file.json', (req, res) => {
-            countOfRequests++;
-            res.send(fileContent);
-        });
-    });
-
     beforeEach(() => {
         countOfRequests = 0;
         fileContent = { version: 1 };
-    });
-
-    afterEach((done) => {
-        mockedFileServer.reset(done);
-    });
-
-    after((done) => {
-        mockedFileServer.close(done);
     });
 
 
@@ -60,8 +40,9 @@ describe('getMongoCachedJSONFetcher', () => {
 
         const fetchTheJson = getMongoCachedJSONFetcher(fileUrl, collection, {});
 
-        mockedFileServer.handleNext('GET', '/file.json', (req, res) => {
-            res.status(500).send({ error: 'Some bad thing happen' });
+        mockedFileServer.handleNext('GET', '/file.json', (ctx) => {
+            ctx.status = 500;
+            ctx.body = { error: 'Some bad thing happen' };
         });
 
         await fetchTheJson()
@@ -75,7 +56,7 @@ describe('getMongoCachedJSONFetcher', () => {
             );
 
 
-        mockedFileServer.assertAllNextHandlersProcessed();
+        mockedFileServer.runAllCheckers();
 
         assert.equal(countOfRequests, 0, 'There should be no server call to standard handler.');
     });
@@ -121,14 +102,15 @@ describe('getMongoCachedJSONFetcher', () => {
         let file = await fetchTheJson();
         assert.deepEqual(file, fileContent);
 
-        mockedFileServer.handleNext('GET', '/file.json', (req, res) => {
-            res.status(500).send({ error: 'Some bad thing happen' });
+        mockedFileServer.handleNext('GET', '/file.json', (ctx) => {
+            ctx.status = 500;
+            ctx.body = { error: 'Some bad thing happen' };
         });
 
         file = await fetchTheJson();
         assert.deepEqual(file, fileContent);
 
-        mockedFileServer.assertAllNextHandlersProcessed();
+        mockedFileServer.runAllCheckers();
 
         assert.equal(countOfRequests, 1, 'There should be only one server call to standard handler.');
     });
@@ -144,8 +126,9 @@ describe('getMongoCachedJSONFetcher', () => {
             const file = await fetchTheJson();
             assert.deepEqual(file, fileContent);
 
-            mockedFileServer.handleNext('GET', '/file.json', (req, res) => {
-                res.status(500).send({ error: 'Some bad thing happen' });
+            mockedFileServer.handleNext('GET', '/file.json', (ctx) => {
+                ctx.status = 500;
+                ctx.body = { error: 'Some bad thing happen' };
             });
 
             await fetchTheJson(true)
@@ -161,7 +144,7 @@ describe('getMongoCachedJSONFetcher', () => {
                     }
                 );
 
-            mockedFileServer.assertAllNextHandlersProcessed();
+            mockedFileServer.runAllCheckers();
 
             assert.equal(countOfRequests, 1, 'There should be only one server call to standard handler.');
         }
