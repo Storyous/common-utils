@@ -10,13 +10,17 @@ const { it, describe, beforeEach } = require('mocha');
 
 describe('getMongoCachedJSONFetcher', () => {
 
+    function delay (milliseconds) {
+        return new Promise(resolve => setTimeout(resolve, milliseconds));
+    }
+
     const fileUrl = 'http://127.0.0.1:3011/file.json';
 
     let fileContent;
 
     const mockedFileServer = new MockedServer(fileUrl);
     let countOfRequests = 0;
-    mockedFileServer.handle('GET', '/file.json', (ctx) => {
+    mockedFileServer.fileRoute = mockedFileServer.route('GET', '/file.json', (ctx) => {
         countOfRequests++;
         ctx.body = fileContent;
     });
@@ -51,7 +55,7 @@ describe('getMongoCachedJSONFetcher', () => {
                     throw Error('This should not happen.');
                 },
                 (err) => {
-                    assert.equal(err.message, `Internal: URL fetch fail: ${fileUrl}`);
+                    assert.equal(err.message, `No fresh JSON content available. Internal: URL fetch fail: ${fileUrl}`);
                 }
             );
 
@@ -74,6 +78,32 @@ describe('getMongoCachedJSONFetcher', () => {
         assert.deepEqual(file, fileContent);
 
         assert.equal(countOfRequests, 1, 'There should be only one server call.');
+    });
+
+    it('should fetch the file only once for multiple parallel requests', async () => {
+
+        const fetchTheJson = getMongoCachedJSONFetcher(fileUrl, collection, {
+            cacheLifetime: 10000
+        });
+
+        mockedFileServer.fileRoute.handleNext(async (ctx, next) => {
+            await delay(500);
+            return next();
+        });
+
+        const promisedFile1 = fetchTheJson();
+        const promisedFile2 = fetchTheJson();
+
+        const [result1, result2] = await Promise.all([promisedFile1, promisedFile2]);
+        assert.deepEqual(result1, fileContent);
+        assert.deepEqual(result2, fileContent);
+        assert(result1 !== result2, 'Reference on two results should not be the same.');
+        assert.equal(countOfRequests, 1, 'There should be only one server call for parallel function calls.');
+
+        await cleanCache();
+        const promisedFile3 = await fetchTheJson();
+        assert.deepEqual(promisedFile3, fileContent);
+        assert.equal(countOfRequests, 2, 'There should be only one server call.');
     });
 
     it('should fetch and cache fresh file after cache is old', async () => {
