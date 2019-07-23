@@ -106,6 +106,55 @@ describe('getMongoCachedJSONFetcher', () => {
         assert.equal(countOfRequests, 2, 'There should be only one server call.');
     });
 
+    it('should handle too long fetch requests and return old result', async () => {
+
+        const version1Content = { version: 1 };
+        const version2Content = { version: 2 };
+
+        const timeout = 300;
+
+        const fetchTheJson = getMongoCachedJSONFetcher(fileUrl, collection, {
+            cacheLifetime: -1,
+            timeout
+        });
+
+        fileContent = version1Content;
+        await fetchTheJson(); // to fill the cache with version1Content for the test
+
+        fileContent = version2Content;
+        mockedFileServer.fileRoute.handleNext(async (ctx, next) => {
+            await delay(1000); // let respond in very long time
+            return next();
+        });
+
+        const start = Date.now();
+        const result1 = await fetchTheJson();
+        const duration = Date.now() - start;
+        assert(duration < (timeout + 50), `Duration is greater than the limit, current value ${duration}`);
+
+        assert.deepEqual(
+            result1,
+            version1Content,
+            'Content should be served for even expired cache when the request was too long'
+        );
+        assert.equal(countOfRequests, 1, 'There should be only one server call.');
+
+        await delay(1200); // let the request in background finish
+
+        // let make the next request fail to see what is in the cache
+        mockedFileServer.fileRoute.handleNext(async (ctx) => {
+            ctx.status = 500;
+            ctx.body = { error: 'some error' };
+        });
+
+        const result2 = await fetchTheJson();
+        assert.deepEqual(
+            result2,
+            version2Content,
+            'The cache should be filled with a fresh content once the request finishes in background.'
+        );
+    });
+
     it('should fetch and cache fresh file after cache is old', async () => {
 
         const fetchTheJson = getMongoCachedJSONFetcher(fileUrl, collection, {
