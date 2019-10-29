@@ -31,7 +31,7 @@ describe('fetch', () => {
         const body = 'Internal Server Error';
         server.endpoint.handleNext(withResponse(status, body));
         await assert.rejects(() => fetch(url), {
-            message: 'Response is not ok',
+            message: 'Response status 500 is not ok',
             meta: { request: { url, method: 'GET' }, response: { status, body } }
         });
 
