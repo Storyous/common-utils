@@ -17,8 +17,6 @@
   "author": "Stanislav Gurnik",
   "license": "ISC",
   "dependencies": {
-    "@storyous/winston-gelf": "0.0.3",
-    "@storyous/winston-raven-sentry": "2.1.0",
     "handlebars": "^4.0.11",
     "lodash": "^4.17.11",
     "migrate": "^1.6.2",
@@ -28,8 +26,9 @@
     "nodemailer": "^4.4.2",
     "prom-client": "^11.0.0",
     "supertest": "^3.1.0",
-    "winston": "^2.4.2",
-    "winston-loggly-bulk": "^2.0.3"
+    "winston": "^3.2.1",
+    "winston-loggly-bulk": "^3.0.1",
+    "winston-sentry-raven-transport": "^1.1.0"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
