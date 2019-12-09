@@ -28,7 +28,7 @@
     "supertest": "^3.1.0",
     "winston": "^3.2.1",
     "winston-loggly-bulk": "^3.0.1",
-    "winston-sentry-raven-transport": "git+https://github.com/VaclavObornik/winston-sentry-raven-transport.git#fingerprintPropagation"
+    "winston-sentry-raven-transport": "^1.2.0"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
