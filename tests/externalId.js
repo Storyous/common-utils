@@ -34,6 +34,6 @@ describe('External Ids', () => {
     });
 
     it('should throw an AppError, when pass wrong argument', () => {
-        assert.throws(() => (ID.encode('someString', 'p')), {});
+        assert.throws(() => (ID.encode('someString', 'p')), /Invalid input number/);
     });
 });
