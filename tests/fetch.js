@@ -17,7 +17,7 @@ describe('fetch', () => {
     };
 
     const server = new MockedServer(url);
-    server.endpoint = server.route('GET', '/endpoint');
+    server.endpoint = server.get('/endpoint');
 
     it('should be ok to do request', async () => {
         server.endpoint.handleNext(withResponse(200, '{"ok": true}'));
