@@ -470,7 +470,7 @@ describe('getMongoCachedJSONFetcher', () => {
             });
         }
 
-        it('should property respond in case of NO cached content', async () => {
+        it('should properly respond in case of NO cached content', async () => {
 
             const fetchTheJson = await getMongoCachedJSONFetcher(collection, { url });
             const etag = '111';
