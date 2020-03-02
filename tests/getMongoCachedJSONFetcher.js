@@ -229,8 +229,11 @@ describe('getMongoCachedJSONFetcher', () => {
                 mappedFile: true
             };
 
-            const transform = async (content) => {
+            const myKey = 'someId';
+
+            const transform = async (content, key) => {
                 assert.deepStrictEqual(content, fileContent);
+                assert.strictEqual(key, myKey);
                 return transformedContent;
             };
 
@@ -239,7 +242,7 @@ describe('getMongoCachedJSONFetcher', () => {
                 transform
             });
 
-            const file = await fetchTheJson();
+            const file = await fetchTheJson({ key: myKey });
             assert.deepStrictEqual(file, {
                 content: transformedContent, isCacheFresh: true, etag: null, etagMatch: false
             });
