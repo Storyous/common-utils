@@ -173,6 +173,46 @@ describe('getMongoCachedJSONFetcher', () => {
         );
     });
 
+    it('should handle too long fetch requests and throw if no content cached', async () => {
+
+        const timeout = 300;
+
+        const fetchTheJson = await getMongoCachedJSONFetcher(collection, {
+            url,
+            timeout
+        });
+
+        mockedFileServer.fileRoute.handleNext(async (ctx, next) => {
+            await delay(1000); // let respond in very long time
+            return next();
+        });
+
+        const start = Date.now();
+        await assert.rejects(fetchTheJson, /Cache refresh timed-out and there is no cached version to serve yet./);
+
+        const duration = Date.now() - start;
+        assert(duration < (timeout + 50), `Duration is greater than the limit, current value ${duration}`);
+
+        await delay(1200); // let the request in background finish
+
+        assert.equal(countOfRequests, 1, 'There should be only one server call.');
+
+        // let make the next request fail to see what is in the cache
+        mockedFileServer.fileRoute.handleNext(async (ctx) => {
+            ctx.status = 500;
+            ctx.body = { error: 'some error' };
+        });
+
+        const result2 = await fetchTheJson();
+        assert.deepStrictEqual(
+            result2,
+            {
+                content: fileContent, etag: null, isCacheFresh: false, etagMatch: false
+            },
+            'The cache should be filled with a isCacheFresh content once the request finishes in background.'
+        );
+    });
+
     it('should fetch and cache fresh file after cache is old', async () => {
 
         const fetchTheJson = await getMongoCachedJSONFetcher(collection, {
