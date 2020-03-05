@@ -6,6 +6,8 @@ const MockedServer = require('mocked-server');
 const assert = require('assert');
 const sinon = require('sinon');
 const { it, describe, beforeEach } = require('mocha');
+const crypto = require('crypto');
+const { times } = require('lodash');
 
 
 describe('getMongoCachedJSONFetcher', () => {
@@ -16,6 +18,11 @@ describe('getMongoCachedJSONFetcher', () => {
 
     function assertEtag (ctx, value) {
         assert.deepStrictEqual(ctx.get('If-None-Match'), value || '');
+    }
+
+    function getETagByContent (content) {
+        const hash = crypto.createHash('sha1').update(JSON.stringify(content)).digest('base64');
+        return `W/"${hash}"`;
     }
 
     const url = 'http://127.0.0.1:3011/file.json';
@@ -77,7 +84,7 @@ describe('getMongoCachedJSONFetcher', () => {
         });
 
         const expected = {
-            content: fileContent, etag: null, isCacheFresh: true, etagMatch: false
+            content: fileContent, etag: getETagByContent(fileContent), isCacheFresh: true, etagMatch: false
         };
 
         let result = await fetchTheJson();
@@ -105,7 +112,7 @@ describe('getMongoCachedJSONFetcher', () => {
         const promisedFile2 = fetchTheJson();
 
         const expectedResult = {
-            content: fileContent, etag: null, isCacheFresh: true, etagMatch: false
+            content: fileContent, etag: getETagByContent(fileContent), isCacheFresh: true, etagMatch: false
         };
 
         const [result1, result2] = await Promise.all([promisedFile1, promisedFile2]);
@@ -149,7 +156,7 @@ describe('getMongoCachedJSONFetcher', () => {
         assert.deepStrictEqual(
             result1,
             {
-                content: version1Content, etag: null, isCacheFresh: false, etagMatch: false
+                content: version1Content, etag: getETagByContent(version1Content), isCacheFresh: false, etagMatch: false
             },
             'Content should be served for even expired cache when the request was too long'
         );
@@ -167,7 +174,7 @@ describe('getMongoCachedJSONFetcher', () => {
         assert.deepStrictEqual(
             result2,
             {
-                content: version2Content, etag: null, isCacheFresh: false, etagMatch: false
+                content: version2Content, etag: getETagByContent(version2Content), isCacheFresh: false, etagMatch: false
             },
             'The cache should be filled with a isCacheFresh content once the request finishes in background.'
         );
@@ -207,7 +214,7 @@ describe('getMongoCachedJSONFetcher', () => {
         assert.deepStrictEqual(
             result2,
             {
-                content: fileContent, etag: null, isCacheFresh: false, etagMatch: false
+                content: fileContent, etag: getETagByContent(fileContent), isCacheFresh: false, etagMatch: false
             },
             'The cache should be filled with a isCacheFresh content once the request finishes in background.'
         );
@@ -222,14 +229,14 @@ describe('getMongoCachedJSONFetcher', () => {
 
         let result = await fetchTheJson();
         assert.deepStrictEqual(result, {
-            content: fileContent, etag: null, isCacheFresh: true, etagMatch: false
+            content: fileContent, etag: getETagByContent(fileContent), isCacheFresh: true, etagMatch: false
         });
 
         fileContent = { version: 2 };
 
         result = await fetchTheJson();
         assert.deepStrictEqual(result, {
-            content: fileContent, etag: null, isCacheFresh: true, etagMatch: false
+            content: fileContent, etag: getETagByContent(fileContent), isCacheFresh: true, etagMatch: false
         });
 
         assert.equal(countOfRequests, 2, 'There should be two server calls.');
@@ -243,7 +250,7 @@ describe('getMongoCachedJSONFetcher', () => {
 
         let file = await fetchTheJson();
         assert.deepStrictEqual(file, {
-            content: fileContent, etag: null, isCacheFresh: true, etagMatch: false
+            content: fileContent, etag: getETagByContent(fileContent), isCacheFresh: true, etagMatch: false
         });
 
         mockedFileServer.fileRoute.handleNext((ctx) => {
@@ -253,7 +260,7 @@ describe('getMongoCachedJSONFetcher', () => {
 
         file = await fetchTheJson();
         assert.deepStrictEqual(file, {
-            content: fileContent, etag: null, isCacheFresh: false, etagMatch: false
+            content: fileContent, etag: getETagByContent(fileContent), isCacheFresh: false, etagMatch: false
         });
 
         mockedFileServer.runAllCheckers();
@@ -284,7 +291,7 @@ describe('getMongoCachedJSONFetcher', () => {
 
             const file = await fetchTheJson({ key: myKey });
             assert.deepStrictEqual(file, {
-                content: transformedContent, isCacheFresh: true, etag: null, etagMatch: false
+                content: transformedContent, isCacheFresh: true, etag: getETagByContent(fileContent), etagMatch: false
             });
         });
 
@@ -319,18 +326,21 @@ describe('getMongoCachedJSONFetcher', () => {
 
             let called = false;
 
+            const updatedFile = { version: 2 };
+
             const transformedContent = {
                 mappedFile: true
             };
 
             const transform = sinon.spy(async (content) => {
-                assert.deepStrictEqual(content, fileContent);
 
                 if (!called) {
+                    assert.deepStrictEqual(content, fileContent);
                     called = true;
                     return transformedContent;
                 }
 
+                assert.deepStrictEqual(content, updatedFile);
                 throw new Error('Error during transformation');
             });
 
@@ -341,12 +351,17 @@ describe('getMongoCachedJSONFetcher', () => {
 
             const firstResult = await fetchTheJson();
             assert.deepStrictEqual(firstResult, {
-                content: transformedContent, etag: null, isCacheFresh: true, etagMatch: false
+                content: transformedContent, etag: getETagByContent(fileContent), isCacheFresh: true, etagMatch: false
+            });
+
+
+            mockedFileServer.fileRoute.handleNext((ctx) => {
+                ctx.body = updatedFile;
             });
 
             const secondResult = await fetchTheJson();
             assert.deepStrictEqual(secondResult, {
-                content: transformedContent, etag: null, isCacheFresh: false, etagMatch: false
+                content: transformedContent, etag: getETagByContent(fileContent), isCacheFresh: false, etagMatch: false
             });
 
             assert.equal(transform.callCount, 2, 'The transform should be called twice.');
@@ -356,32 +371,7 @@ describe('getMongoCachedJSONFetcher', () => {
 
     describe('etag', () => {
 
-        it('should not send if-none-match header if there is no etag cached', async () => {
-
-            const fetchTheJson = await getMongoCachedJSONFetcher(collection, { url });
-
-            mockedFileServer.fileRoute.handleNext((ctx, next) => {
-                assertEtag(ctx, null);
-                return next();
-            });
-            let result = await fetchTheJson();
-            assert.deepStrictEqual(result, {
-                content: fileContent, etag: null, isCacheFresh: true, etagMatch: false
-            });
-
-            mockedFileServer.fileRoute.handleNext((ctx, next) => {
-                assertEtag(ctx, null);
-                return next();
-            });
-            result = await fetchTheJson();
-            assert.deepStrictEqual(result, {
-                content: fileContent, etag: null, isCacheFresh: true, etagMatch: false
-            });
-
-            assert.equal(countOfRequests, 2);
-        });
-
-        it('should serve cached content if etag match', async () => {
+        it('should serve cached content if remote etag match', async () => {
 
             const fetchTheJson = await getMongoCachedJSONFetcher(collection, { url });
 
@@ -470,7 +460,10 @@ describe('getMongoCachedJSONFetcher', () => {
             });
             result = await fetchTheJson();
             assert.deepStrictEqual(result, {
-                content: updatedFileContent, etag: null, isCacheFresh: true, etagMatch: false
+                content: updatedFileContent,
+                etag: getETagByContent(updatedFileContent),
+                isCacheFresh: true,
+                etagMatch: false
             });
 
             mockedFileServer.fileRoute.handleNext((ctx) => {
@@ -479,8 +472,104 @@ describe('getMongoCachedJSONFetcher', () => {
             });
             result = await fetchTheJson();
             assert.deepStrictEqual(result, {
-                content: updatedFileContent, etag: null, isCacheFresh: false, etagMatch: false
+                content: updatedFileContent,
+                etag: getETagByContent(updatedFileContent),
+                isCacheFresh: false,
+                etagMatch: false
             });
+        });
+
+        it('should calculate etag if no is provided', async () => {
+
+            const fetchTheJson = await getMongoCachedJSONFetcher(collection, {
+                url,
+                cacheLifetime: 10000
+            });
+
+            const calculatedEtag = getETagByContent(fileContent);
+
+            const expected = {
+                content: fileContent, etag: calculatedEtag, isCacheFresh: true, etagMatch: false
+            };
+
+            let result = await fetchTheJson();
+            assert.deepStrictEqual(result, expected);
+
+            result = await fetchTheJson();
+            assert.deepStrictEqual(result, expected);
+
+            assert.equal(countOfRequests, 1, 'There should be only one server call.');
+        });
+
+        it('should not call transform function if returned etag matches', async () => {
+
+
+            const transformedContent = { mappedFile: true };
+
+            const transform = sinon.spy(async (content, key) => {
+                assert.deepStrictEqual(content, fileContent);
+                assert.strictEqual(key, url);
+                return transformedContent;
+            });
+
+            const fetchTheJson = await getMongoCachedJSONFetcher(collection, {
+                url,
+                transform
+            });
+
+            const returnedEtag = '1178657';
+
+            times(2, () => mockedFileServer.fileRoute.handleNext((ctx, next) => {
+                ctx.set('ETag', returnedEtag);
+                return next();
+            }));
+
+            const expected = {
+                content: transformedContent, etag: returnedEtag, isCacheFresh: true, etagMatch: false
+            };
+
+            let result = await fetchTheJson();
+            assert.deepStrictEqual(result, expected);
+
+            result = await fetchTheJson();
+            assert.deepStrictEqual(result, expected);
+
+            assert.strictEqual(countOfRequests, 2, 'There should be two server call.');
+            assert.strictEqual(transform.callCount, 1, 'There should be only on transform function call');
+
+        });
+
+        it('should not call transform function if calculated etag matches', async () => {
+
+            const transformedContent = {
+                mappedFile: true
+            };
+
+            const transform = sinon.spy(async (content, key) => {
+                assert.deepStrictEqual(content, fileContent);
+                assert.strictEqual(key, url);
+                return transformedContent;
+            });
+
+            const fetchTheJson = await getMongoCachedJSONFetcher(collection, {
+                url,
+                transform
+            });
+
+            const calculatedEtag = getETagByContent(fileContent);
+
+            const expected = {
+                content: transformedContent, etag: calculatedEtag, isCacheFresh: true, etagMatch: false
+            };
+
+            let result = await fetchTheJson();
+            assert.deepStrictEqual(result, expected);
+
+            result = await fetchTheJson();
+            assert.deepStrictEqual(result, expected);
+
+            assert.strictEqual(countOfRequests, 2, 'There should be two server call.');
+            assert.strictEqual(transform.callCount, 1, 'There should be only on transform function call');
         });
 
     });
@@ -592,7 +681,7 @@ describe('getMongoCachedJSONFetcher', () => {
 
             const result = await fetchTheJson({ metaOnly: true });
             assert.deepStrictEqual(result, {
-                content: null, etag: null, isCacheFresh: true, etagMatch: false
+                content: null, etag: getETagByContent(fileContent), isCacheFresh: true, etagMatch: false
             });
         });
 
