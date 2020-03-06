@@ -56,7 +56,7 @@ const parameters = {
 const {
     content, // file content, null in case of etagMatch=true
     isCacheFresh, // boolean saying the content is not after its lifetime
-    etag, // entity tag (version). It's null if the remote source didn't provide it in the last 200 response, it can be used in future fetcher calls as ifNoneMatch parameter
+    etag, // entity tag (version). If not null, it can be used in future fetcher calls as ifNoneMatch parameter
     etagMatch // boolean, truthy if isNoneMatch parameter provided and corresponds with latest cached etag value
 } = await fetcher(parameters /* optional */ );
 ```
