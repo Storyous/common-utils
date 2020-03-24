@@ -23,13 +23,16 @@ describe('getMongoLocker', () => {
 
     it('should acquire and release a lock', async () => {
 
-        const callback = sinon.spy();
+        let i = 0;
+        const callback = sinon.spy(() => ++i);
 
         const locker = await getMongoLocker(collection);
 
-        await locker('AAA', callback);
+        const result1 = await locker('AAA', callback);
+        assert.strictEqual(result1, 1);
 
-        await locker('AAA', callback);
+        const result2 = await locker('AAA', callback);
+        assert.strictEqual(result2, 2);
 
         assert.deepStrictEqual(callback.callCount, 2);
     });
