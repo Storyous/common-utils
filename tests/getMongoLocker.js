@@ -1,11 +1,11 @@
 'use strict';
 
-const getTestDatabase = require('./getTestDatabase');
-const getMongoLocker = require('../lib/getMongoLocker');
 const assert = require('assert');
 const sinon = require('sinon');
 const { it, describe, beforeEach } = require('mocha');
 const { times, pick } = require('lodash');
+const getMongoLocker = require('../lib/getMongoLocker');
+const getTestDatabase = require('./getTestDatabase');
 
 describe('getMongoLocker', () => {
 
@@ -41,15 +41,14 @@ describe('getMongoLocker', () => {
 
         const locker = await getMongoLocker(collection);
 
-        const callback = sinon.spy();
+        const callback = sinon.spy(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+        const callLocker = () => locker('AAA', callback, { noLaterThan: 0 });
 
         const concurrency = 10;
+        const promises = times(concurrency, callLocker);
 
-        const promises = times(concurrency, () => locker('AAA', async () => {
-            await new Promise(resolve => setTimeout(resolve, 50));
-            callback();
-        }));
-
+        await Promise.allSettled(promises); // just to get rid of UnhandledRejectionErrors
 
         const stats = { resolved: 0, failed: 0 };
 
@@ -70,14 +69,35 @@ describe('getMongoLocker', () => {
     it('should propagate an error and release the lock if the callback fails', async () => {
         const locker = await getMongoLocker(collection);
 
-        await assert.rejects(locker('AAA', async () => {
-            throw new Error('Some error occured');
-        }), /Some error occured/);
+        await assert.rejects(() => locker('AAA', async () => {
+            throw new Error('Some error occurred');
+        }), /Some error occurred/);
 
         const callback = sinon.spy();
         await locker('AAA', callback);
 
         assert.strictEqual(callback.callCount, 1);
+    });
+
+    it('should be able to handle few concurrent tasks by waiting some time and acquire retries', async () => {
+        const locker = await getMongoLocker(collection);
+        const callTimes = [];
+        const callback = sinon.spy(async () => {
+            callTimes.push(new Date());
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            callTimes.push(new Date());
+        }); // default retryDelay is 200
+
+        const callLocker = () => locker('AAA', callback);
+
+        await Promise.all(times(3, callLocker));
+
+        assert.strictEqual(callback.callCount, 3);
+        callTimes.forEach((time, i) => {
+            if (i > 0) {
+                assert(time > callTimes[i - 1], 'There was a parallel callback execution!');
+            }
+        });
     });
 
     it('should create and TTL index on the right field', async () => {
