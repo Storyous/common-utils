@@ -29,6 +29,10 @@ mongoCachedFetcher
     - expose ifNoneMatch
     - returns result object instead of direct file content
 
+### 10.0
+
+concurrentTask accepts options object as the second parameter allowing configure: noLaterThan, startAttemptsDelay
+
 
 ## MongoCachedFetcher
 
