@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "npm run test:lint && npm run test:mocha",
-    "test:mocha": "node ./node_modules/mocha/bin/_mocha --recursive ./tests",
+    "test:mocha": "mocha",
+    "test:stryker": "stryker run",
     "test:lint": "eslint lib"
   },
   "keywords": [
@@ -31,6 +32,10 @@
     "winston-sentry-raven-transport": "^1.2.0"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^3.1.0",
+    "@stryker-mutator/javascript-mutator": "^3.1.0",
+    "@stryker-mutator/mocha-framework": "^3.1.0",
+    "@stryker-mutator/mocha-runner": "^3.1.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-import": "^2.20.1",
