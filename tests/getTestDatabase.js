@@ -1,7 +1,7 @@
 'use strict';
 
-const db = require('../lib/models/db');
 const { after } = require('mocha');
+const db = require('../lib/models/db');
 
 let connectPromise;
 
@@ -15,7 +15,7 @@ after(() => {
 module.exports = async () => {
 
     if (!connectPromise) {
-        connectPromise = db.connect('mongodb://127.0.0.1:27017/common-utils-testing');
+        connectPromise = db.connect('mongodb://127.0.0.1:27018/common-utils-testing');
     }
 
     await connectPromise;
