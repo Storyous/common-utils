@@ -1,19 +1,19 @@
 'use strict';
 
-const getTestDatabase = require('./getTestDatabase');
-const getMongoCachedJSONFetcher = require('../lib/getMongoCachedJSONFetcher');
 const MockedServer = require('mocked-server');
 const assert = require('assert');
 const sinon = require('sinon');
 const { it, describe, beforeEach } = require('mocha');
 const crypto = require('crypto');
 const { times } = require('lodash');
+const getMongoCachedJSONFetcher = require('../lib/getMongoCachedJSONFetcher');
+const getTestDatabase = require('./getTestDatabase');
 
 
 describe('getMongoCachedJSONFetcher', () => {
 
     function delay (milliseconds) {
-        return new Promise(resolve => setTimeout(resolve, milliseconds));
+        return new Promise((resolve) => setTimeout(resolve, milliseconds));
     }
 
     function assertEtag (ctx, value) {
@@ -66,7 +66,17 @@ describe('getMongoCachedJSONFetcher', () => {
                     throw Error('This should not happen.');
                 },
                 (err) => {
-                    assert.equal(err.message, 'Internal: URL fetch fail: http://127.0.0.1:3011/file.json');
+                    assert.equal(err.message, 'Response status 500 is not ok');
+                    assert.deepStrictEqual(err.meta, {
+                        request: {
+                            method: 'GET',
+                            url: 'http://127.0.0.1:3011/file.json'
+                        },
+                        response: {
+                            body: '{"error":"Some bad thing happen"}',
+                            status: 500
+                        }
+                    });
                 }
             );
 
