@@ -21,7 +21,7 @@
     "lodash": "^4.17.15",
     "migrate": "^1.6.2",
     "moment": "^2.24.0",
-    "mongodb": "^3.5.5",
+    "mongodb": "^3.5.9",
     "node-fetch": "^2.6.0",
     "nodemailer": "^4.4.2",
     "prom-client": "^11.0.0",
