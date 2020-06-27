@@ -14,7 +14,7 @@
     "microservice",
     "architecture"
   ],
-  "author": "Stanislav Gurnik",
+  "author": "Storyous team",
   "license": "ISC",
   "dependencies": {
     "handlebars": "^4.7.3",
