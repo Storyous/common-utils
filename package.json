@@ -1,6 +1,6 @@
 {
   "name": "@storyous/common-utils",
-  "version": "10.4.0",
+  "version": "10.5.0",
   "description": "Common utils for storyous microservices",
   "main": "lib/index.js",
   "scripts": {
@@ -14,14 +14,14 @@
     "microservice",
     "architecture"
   ],
-  "author": "Stanislav Gurnik",
+  "author": "Storyous team",
   "license": "ISC",
   "dependencies": {
     "handlebars": "^4.7.3",
     "lodash": "^4.17.15",
     "migrate": "^1.6.2",
     "moment": "^2.24.0",
-    "mongodb": "^3.5.5",
+    "mongodb": "^3.5.9",
     "node-fetch": "^2.6.0",
     "nodemailer": "^4.4.2",
     "prom-client": "^11.0.0",
