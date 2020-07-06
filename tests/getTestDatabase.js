@@ -1,7 +1,7 @@
 'use strict';
 
-const db = require('../lib/models/db');
 const { after } = require('mocha');
+const db = require('../lib/models/db');
 
 let connectPromise;
 

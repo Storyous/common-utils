@@ -33,6 +33,34 @@ mongoCachedFetcher
 
 concurrentTask accepts options object as the second parameter allowing configure: noLaterThan, startAttemptsDelay
 
+### 11.0
+
+apiTestUtil becomes testUtils. New usage:
+
+#### `config/testing.config.json`
+```javascript
+const testUtils = require('@storyous/common-utils/lib/testUtils');
+
+module.exports = {
+   dbUri: testUtils.uniqueDatabase(process.env.MONGODB_URI) // this will generate timestamp-postfixed database name 
+        || 'mongodb://127.0.0.1:27018/myProjectTesting',
+   // ...the rest of the config
+};
+```
+
+#### `test/api.js`
+```javascript
+const testUtils = require('@storyous/common-utils/lib/testUtils');
+const app = require('../app'); // this has to be a function providing Koa function
+const config = require('../config');
+
+testUtils.init({
+    app,
+    cleanDatabaseUrl: config.db.url // this will prune all old testing databases
+});
+
+module.exports = testUtils;
+```
 
 ## MongoCachedFetcher
 
