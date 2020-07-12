@@ -7,7 +7,7 @@ const { it, describe, beforeEach } = require('mocha');
 const crypto = require('crypto');
 const { times } = require('lodash');
 const getMongoCachedJSONFetcher = require('../lib/getMongoCachedJSONFetcher');
-const getTestDatabase = require('./getTestDatabase');
+const getMongoClient = require('./getMongoClient');
 
 
 describe('getMongoCachedJSONFetcher', () => {
@@ -41,7 +41,7 @@ describe('getMongoCachedJSONFetcher', () => {
     const cleanCache = () => collection.removeMany({});
 
     beforeEach(async () => {
-        collection = (await getTestDatabase()).db.collection('cachedFiles');
+        collection = (await getMongoClient()).db().collection('cachedFiles');
         await collection.drop();
     });
 

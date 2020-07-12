@@ -5,17 +5,17 @@ const sinon = require('sinon');
 const { it, describe, beforeEach } = require('mocha');
 const { times, pick } = require('lodash');
 const getMongoLocker = require('../lib/getMongoLocker');
-const getTestDatabase = require('./getTestDatabase');
+const getMongoClient = require('./getMongoClient');
 
 describe('getMongoLocker', () => {
 
-    let db;
+    let mongoClient;
     const collectionName = 'locks';
     let collection;
 
     beforeEach(async () => {
-        db = await getTestDatabase();
-        collection = db.db.collection(collectionName);
+        mongoClient = await getMongoClient();
+        collection = mongoClient.db().collection(collectionName);
         try {
             await collection.drop();
         } catch (e) {} // eslint-disable-line no-empty
@@ -102,7 +102,7 @@ describe('getMongoLocker', () => {
 
     it('should create and TTL index on the right field', async () => {
 
-        await db.db.createCollection(collectionName);
+        await mongoClient.db().createCollection(collectionName);
 
         let indexes = await collection.indexes();
         assert.deepStrictEqual(indexes.length, 1); // ensure there is only mandatory _id index

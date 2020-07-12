@@ -1,11 +1,11 @@
 'use strict';
 
+require('./config');
 const { describe, it } = require('mocha');
-const config = require('./config');
-const log = require('../../lib/models/log');
-const AppError = require('../../lib/appError');
+const log = require('../lib/models/log');
+const AppError = require('../lib/appError');
 
-describe('logging', function () {
+describe('logging', () => {
 
     it('should be possible to log with module', async () => {
 
@@ -28,8 +28,7 @@ describe('logging', function () {
 
         // log.error('string only message', { some: 'info', body: { password: 'abc' } });
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
     });
 
 });
-
