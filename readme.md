@@ -42,7 +42,7 @@ apiTestUtil becomes testUtils. New usage:
 const testUtils = require('@storyous/common-utils/lib/testUtils');
 
 module.exports = {
-   dbUri: testUtils.uniqueDatabase(process.env.MONGODB_URI) // this will generate timestamp-postfixed database name 
+   mongodbUrl: testUtils.uniqueDatabase(process.env.MONGODB_URI) // this will generate timestamp-postfixed database name 
         || 'mongodb://127.0.0.1:27018/myProjectTesting',
    // ...the rest of the config
 };
@@ -52,15 +52,17 @@ module.exports = {
 ```javascript
 const testUtils = require('@storyous/common-utils/lib/testUtils');
 const app = require('../app'); // this has to be a function providing Koa function
-const config = require('../config');
 
-testUtils.init({
-    app,
-    cleanDatabaseUrl: config.db.url // this will prune all old testing databases
-});
+testUtils.init({ app });
 
 module.exports = testUtils;
 ```
+
+### 12.0
+
+- Added `mongoClient` module (expects `mongodbUrl` property in config). Preconfigured native mongodb driver's client.
+- Added collection getter returning native mongodb driver's collection. Usage: `collection('myOrders')`.
+- Removed `db` module - use `collection` & `mongoClient` instead.
 
 ## MongoCachedFetcher
 
