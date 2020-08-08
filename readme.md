@@ -64,6 +64,20 @@ module.exports = testUtils;
 - Added collection getter returning native mongodb driver's collection. Usage: `collection('myOrders')`.
 - Removed `db` module - use `collection` & `mongoClient` instead.
 
+
+### 13.0
+
+Error handler is direct function. Usage:
+
+```javascript
+const { errorHandler } = require('@storyous/common-utils');
+
+// ...
+
+app.use(errorHandler);
+```
+
+
 ## MongoCachedFetcher
 
 ### Usage:  

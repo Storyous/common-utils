@@ -17,6 +17,7 @@
   "author": "Storyous team",
   "license": "ISC",
   "dependencies": {
+    "@sentry/node": "^5.20.1",
     "handlebars": "^4.7.3",
     "lodash": "^4.17.15",
     "migrate": "^1.6.2",
@@ -27,9 +28,9 @@
     "nodemailer": "^4.4.2",
     "prom-client": "^11.0.0",
     "supertest": "^4.0.2",
-    "winston": "^3.2.1",
+    "winston": "^3.3.3",
     "winston-loggly-bulk": "^3.0.1",
-    "winston-sentry-raven-transport": "^1.2.0"
+    "winston-transport": "^4.4.0"
   },
   "devDependencies": {
     "eslint": "^6.8.0",

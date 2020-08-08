@@ -4,6 +4,9 @@ require('./config');
 const { describe, it } = require('mocha');
 const log = require('../lib/models/log');
 const AppError = require('../lib/appError');
+const errorHandler = require('../lib/errorHandler');
+const fetch = require('../lib/fetch');
+
 
 describe('logging', () => {
 
@@ -25,6 +28,23 @@ describe('logging', () => {
 
         logger.error(err);
         logger.error('native error with text', err);
+
+        log.error(appError);
+
+        const ctx = {
+            request: {
+                query: {}, body: {}, originalUrl: '/aaa/bbb', is: () => false
+            },
+            req: { method: 'GET' },
+            get: (h) => h
+        };
+
+        await errorHandler(ctx, async () => {
+            await fetch.json('https://sdfsdfsdfsdfsdsf.ct?sdfsdf=vsfsdf', {
+                method: 'POST',
+                body: JSON.stringify('aasdsdsd')
+            });
+        });
 
         // log.error('string only message', { some: 'info', body: { password: 'abc' } });
 
