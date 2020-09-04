@@ -51,9 +51,10 @@ module.exports = {
 #### `test/api.js`
 ```javascript
 const testUtils = require('@storyous/common-utils/lib/testUtils');
+const mocha = require('mocha');
 const app = require('../app'); // this has to be a function providing Koa function
 
-testUtils.init({ app });
+testUtils.init({ app, mocha });
 
 module.exports = testUtils;
 ```
