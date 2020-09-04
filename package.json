@@ -23,7 +23,7 @@
     "migrate": "^1.6.2",
     "mocha": "^7.2.0",
     "moment": "^2.24.0",
-    "mongodb": "^3.5.9",
+    "mongodb": "^3.6.1",
     "node-fetch": "^2.6.0",
     "nodemailer": "^4.4.2",
     "prom-client": "^11.0.0",

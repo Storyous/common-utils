@@ -1,17 +1,12 @@
 'use strict';
 
-const { after } = require('mocha');
+const { before, after } = require('mocha');
 require('./config');
 const mongoClient = require('../lib/mongoClient');
 
 let connectPromise;
 
-after(() => {
-    console.log('Disconnecting from the database');
-    mongoClient.close();
-});
-
-module.exports = async () => {
+let connectAndGetMongoClient = async () => {
 
     if (!connectPromise) {
         connectPromise = mongoClient.connect();
@@ -21,3 +16,12 @@ module.exports = async () => {
 
     return mongoClient;
 };
+
+before(() => connectAndGetMongoClient());
+
+after(() => {
+    console.log('Disconnecting from the database');
+    mongoClient.close();
+});
+
+module.exports = connectAndGetMongoClient;

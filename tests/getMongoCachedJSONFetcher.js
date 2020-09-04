@@ -42,7 +42,13 @@ describe('getMongoCachedJSONFetcher', () => {
 
     beforeEach(async () => {
         collection = (await getMongoClient()).db().collection('cachedFiles');
-        await collection.drop();
+        try {
+            await collection.drop();
+        } catch (err) {
+            if (!err.message.includes('ns not found')) {
+                throw err;
+            }
+        }
     });
 
     beforeEach(() => {
