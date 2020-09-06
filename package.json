@@ -3,6 +3,9 @@
   "version": "13.1.0",
   "description": "Common utils for storyous microservices",
   "main": "lib/index.js",
+  "bin": {
+    "download-translations": "./scripts/download-translations.js"
+  },
   "scripts": {
     "test": "npm run test:lint && npm run test:mocha",
     "test:mocha": "node ./node_modules/mocha/bin/_mocha --recursive ./tests",
@@ -18,7 +21,10 @@
   "license": "ISC",
   "dependencies": {
     "@sentry/node": "^5.20.1",
+    "commander": "^6.1.0",
     "handlebars": "^4.7.3",
+    "i18next": "^19.7.0",
+    "i18next-fs-backend": "^1.0.7",
     "lodash": "^4.17.15",
     "migrate": "^1.6.2",
     "mocha": "^7.2.0",
