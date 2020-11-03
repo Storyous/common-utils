@@ -64,6 +64,7 @@ module.exports = testUtils;
 - Added `mongoClient` module (expects `mongodbUrl` property in config). Preconfigured native mongodb driver's client.
 - Added collection getter returning native mongodb driver's collection. Usage: `collection('myOrders')`.
 - Removed `db` module - use `collection` & `mongoClient` instead.
+    - `collection` changed to `getCollection` in version 14
 
 
 ### 13.0
@@ -78,6 +79,15 @@ const { errorHandler } = require('@storyous/common-utils');
 app.use(errorHandler);
 ```
 
+### 14.0
+
+```javascript
+collection('collectionName')
+```
+changed to
+```javascript
+getCollection('collectionName')
+``` 
 
 ## MongoCachedFetcher
 
