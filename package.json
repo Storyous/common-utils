@@ -8,8 +8,13 @@
   },
   "scripts": {
     "test": "npm run test:lint && npm run test:mocha",
-    "test:mocha": "node ./node_modules/mocha/bin/_mocha --recursive ./tests",
+    "test:mocha": "mocha test",
     "test:lint": "eslint lib"
+  },
+  "mocha": {
+    "recursive": true,
+    "timeout": 15000,
+    "exit": true
   },
   "keywords": [
     "utils",

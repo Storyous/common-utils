@@ -3,7 +3,7 @@
 const { describe, it, beforeEach } = require('mocha');
 const assert = require('assert').strict;
 const getMongoClient = require('./getMongoClient');
-const collection = require('../lib/collection');
+const getCollection = require('../lib/getCollection');
 
 const withTransaction = require('../lib/withTransaction');
 
@@ -12,7 +12,7 @@ describe('withTransaction', () => {
     let testCollection;
     beforeEach(async () => {
         (await getMongoClient()).db().createCollection('withTransactionTests');
-        testCollection = collection('withTransactionTests');
+        testCollection = getCollection('withTransactionTests');
         testCollection.removeMany();
     });
 
