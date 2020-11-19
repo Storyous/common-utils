@@ -1,14 +1,18 @@
 'use strict';
 
 const { it, describe } = require('mocha');
+const assert = require('assert');
 const urlMetrics = require('../lib/models/urlMetrics');
 
 const messages = [];
 let routerUseMethod = null;
 
 const fakeLog = {
-    info: (message) => {
-        messages.push(message);
+    info: (message, obj) => {
+        messages.push({
+            message,
+            obj
+        });
     }
 };
 
@@ -20,9 +24,9 @@ const fakeKoaRouter = {
 
 const wait = async (timeInMiliseconds) => {
     return new Promise((resolve) => setTimeout(resolve, timeInMiliseconds));
-}
+};
 
-describe('urlMetrics', () => {
+describe.only('urlMetrics', () => {
     it('should', async () => {
         urlMetrics.publishMetrics(fakeLog, fakeKoaRouter,
             {
@@ -31,8 +35,18 @@ describe('urlMetrics', () => {
                 replaceObjectIds: true
             });
 
-        routerUseMethod({ path: '/{{merchantId}}-{{placeId}}/settings' }, Promise.resolve());
-
+        routerUseMethod({
+            path: '/5bd2d1d1bf21352ecc7f28a1-5bd2d1d1bf21352ecc7f28a2/settings',
+            method: 'PUT',
+            matched: [
+                {
+                    path: '/:merchantPlaceId/settings'
+                }
+            ]
+        }, () => Promise.resolve());
         await wait(100);
+        assert.equal(messages[0].message, 'URL was called');
+        assert.equal(messages[0].obj.url, '/:merchantPlaceId/settings-PUT');
+        assert.equal(messages[0].obj.count, 1);
     });
 });
