@@ -22,9 +22,7 @@ const fakeKoaRouter = {
     }
 };
 
-const wait = async (timeInMiliseconds) => {
-    return new Promise((resolve) => setTimeout(resolve, timeInMiliseconds));
-};
+const wait = async (timeInMiliseconds) => new Promise((resolve) => setTimeout(resolve, timeInMiliseconds));
 
 describe('urlMetrics', () => {
     it('should', async () => {
