@@ -26,7 +26,7 @@ const wait = async (timeInMiliseconds) => {
     return new Promise((resolve) => setTimeout(resolve, timeInMiliseconds));
 };
 
-describe.only('urlMetrics', () => {
+describe('urlMetrics', () => {
     it('should', async () => {
         urlMetrics.publishMetrics(fakeLog, fakeKoaRouter,
             {
