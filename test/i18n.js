@@ -9,7 +9,7 @@ const { join } = require('path');
 // https://geedew.com/remove-a-directory-that-is-not-empty-in-nodejs/
 // eslint-disable-next-line
 // https://stackoverflow.com/questions/12627586/is-node-js-rmdir-recursive-will-it-work-on-non-empty-directories/12761924#12761924
-// The Node 10 does not support resurive deleting of folder
+// The Node 10 does not support recursive deleting of folder
 const deleteFolderRecursive = function (path) {
     let files = [];
     if (existsSync(path)) {
