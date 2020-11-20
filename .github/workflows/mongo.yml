@@ -4,6 +4,6 @@
   uses: supercharge/mongodb-github-action@1.3.0
   with:
     # MongoDB version to use (default "latest")
-    mongodb-version: # optional, default is latest
+    # mongodb-version: # optional, default is latest
     # MongoDB replica set name (no replica set by default)
-    mongodb-replica-set: # optional, default is 
+    # mongodb-replica-set: # optional, default is 
