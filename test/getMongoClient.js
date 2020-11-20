@@ -6,7 +6,7 @@ const mongoClient = require('../lib/mongoClient');
 
 let connectPromise;
 
-let connectAndGetMongoClient = async () => {
+const connectAndGetMongoClient = async () => {
 
     if (!connectPromise) {
         connectPromise = mongoClient.connect();

@@ -36,7 +36,7 @@ describe('fetch', () => {
         });
 
         const checkNotReceived = server.endpoint.handleNext(async (ctx) => {
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
             ctx.body = { ok: 1 };
         });
         await assert.rejects(() => fetch(url, { timeout: 50 }), {
