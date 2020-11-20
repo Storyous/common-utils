@@ -54,9 +54,8 @@ describe('getMongoLocker', () => {
         if (Promise.allSettled) {
             await Promise.allSettled(promises); // just to get rid of UnhandledRejectionErrors
         } else {
-            for (let i = 0; i < promises.length; i++) {
-                promises[i].catch(() => {}); // just to get rid of UnhandledRejectionErrors
-            }
+            // just to get rid of UnhandledRejectionErrors
+            promises.forEach((promise) => promise.catch(() => {}));
 
             for (let i = 0; i < promises.length; i++) {
                 try {
