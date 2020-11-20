@@ -15,10 +15,12 @@ describe('getMongoLocker', () => {
 
     beforeEach(async () => {
         mongoClient = await getMongoClient();
-        collection = mongoClient.db().collection(collectionName);
+        collection = mongoClient.db()
+            .collection(collectionName);
         try {
             await collection.drop();
-        } catch (e) {} // eslint-disable-line no-empty
+        } catch (e) {
+        } // eslint-disable-line no-empty
     });
 
     it('should acquire and release a lock', async () => {
@@ -48,9 +50,27 @@ describe('getMongoLocker', () => {
         const concurrency = 10;
         const promises = times(concurrency, callLocker);
 
-        await Promise.allSettled(promises); // just to get rid of UnhandledRejectionErrors
+        // Node 10 or less does not support allSettled. Going through good old cycle in such case
+        if (Promise.allSettled) {
+            await Promise.allSettled(promises); // just to get rid of UnhandledRejectionErrors
+        } else {
+            for (let i = 0; i < promises.length; i++) {
+                promises[i].catch(() => {}); // just to get rid of UnhandledRejectionErrors
+            }
 
-        const stats = { resolved: 0, failed: 0 };
+            for (let i = 0; i < promises.length; i++) {
+                try {
+                    await promises[i]; // eslint-disable-line
+                } catch (err) {
+                    // Thats ok, we expect there can be errors
+                }
+            }
+        }
+
+        const stats = {
+            resolved: 0,
+            failed: 0
+        };
 
         for (const promise of promises) {
             try {
@@ -63,7 +83,10 @@ describe('getMongoLocker', () => {
         }
 
         assert.deepStrictEqual(callback.callCount, 1, 'The callback should be called only once');
-        assert.deepStrictEqual(stats, { resolved: 1, failed: concurrency - 1 });
+        assert.deepStrictEqual(stats, {
+            resolved: 1,
+            failed: concurrency - 1
+        });
     });
 
     it('should propagate an error and release the lock if the callback fails', async () => {
@@ -102,7 +125,8 @@ describe('getMongoLocker', () => {
 
     it('should create and TTL index on the right field', async () => {
 
-        await mongoClient.db().createCollection(collectionName);
+        await mongoClient.db()
+            .createCollection(collectionName);
 
         let indexes = await collection.indexes();
         assert.deepStrictEqual(indexes.length, 1); // ensure there is only mandatory _id index
