@@ -96,4 +96,13 @@ describe('usageTracker', () => {
         assert.equal(messages[4].obj.additionalInfo.metric2.length, 1);
         assert.equal(messages[4].obj.count, 4);
     });
+
+    it('should not log objects in additional info', async () => {
+        usageTracker.watchLineUsage('something4', 'metric', { random: 'object' });
+        await wait(200);
+        assert.equal(messages[5].message, 'usageTracker output');
+        assert.equal(messages[5].obj.name, 'something4');
+        assert.equal(messages[5].obj.additionalInfo.metric, undefined);
+        assert.equal(messages[5].obj.count, 1);
+    });
 });
