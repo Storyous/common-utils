@@ -6,7 +6,7 @@ const sinon = require('sinon');
 const { it, describe, beforeEach } = require('mocha');
 const crypto = require('crypto');
 const { times } = require('lodash');
-const getMongoCachedJSONFetcher = require('../lib/getMongoCachedJSONFetcher');
+const getMongoCachedJSONFetcher = require('../dist/getMongoCachedJSONFetcher');
 const getMongoClient = require('./getMongoClient');
 
 
