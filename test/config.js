@@ -5,11 +5,11 @@ const assert = require('assert');
 
 const config = require('../lib/config');
 
-describe('Configurator', function() {
+describe('Configurator', () => {
 
-    describe('#initialize()', function() {
+    describe('#initialize()', () => {
 
-        it('should fill env property', function () {
+        it('should fill env property', () => {
 
             config.init();
             assert.notEqual(config.env, null, 'env should not be empty');
@@ -17,9 +17,9 @@ describe('Configurator', function() {
         });
     });
 
-    describe('#_merge()', function() {
+    describe('#_merge()', () => {
 
-        it('should be able to merge two objects', function () {
+        it('should be able to merge two objects', () => {
 
             const defaults = {
                 fillWithObject: null,
