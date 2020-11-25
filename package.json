@@ -26,6 +26,7 @@
   "license": "ISC",
   "dependencies": {
     "@sentry/node": "^5.20.1",
+    "cls-hooked": "^4.2.2",
     "commander": "^6.1.0",
     "handlebars": "^4.7.3",
     "i18next": "^19.7.0",
