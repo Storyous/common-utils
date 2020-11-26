@@ -9,7 +9,6 @@ import MigrationsStore from './migrations/MigrationsStore';
 import runMigrations from './migrations/runMigrations';
 import Migration from './migrations/Migration';
 
-
 export {
     log,
     prometheus,
