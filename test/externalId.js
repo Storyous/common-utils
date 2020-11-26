@@ -2,7 +2,7 @@
 
 const { it, describe } = require('mocha');
 const assert = require('assert');
-const ID = require('../lib/externalId');
+const ID = require('../dist/externalId');
 
 
 describe('External Ids', () => {

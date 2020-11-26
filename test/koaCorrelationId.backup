@@ -9,7 +9,7 @@ const {
 } = require('mocha');
 const assert = require('assert');
 
-const { log } = require('../lib');
+const { log } = require('../lib/models/log');
 
 const logModule = log.module('extraInfo');
 const port = 6789;

@@ -4,7 +4,7 @@ const { describe, it } = require('mocha');
 const MockedServer = require('mocked-server');
 const assert = require('assert');
 
-const fetch = require('../lib/fetch');
+const fetch = require('../dist/fetch');
 
 
 describe('fetch', () => {
