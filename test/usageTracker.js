@@ -2,7 +2,7 @@
 
 const { it, describe, before } = require('mocha');
 const assert = require('assert');
-const usageTracker = require('../lib/models/usageTracker');
+const usageTracker = require('../dist/models/usageTracker');
 
 const messages = [];
 let routerUseMethod = null;

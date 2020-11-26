@@ -2,10 +2,10 @@
 
 require('./config');
 const { describe, it } = require('mocha');
-const log = require('../lib/models/log');
-const AppError = require('../lib/appError');
-const errorHandler = require('../lib/errorHandler');
-const fetch = require('../lib/fetch');
+const log = require('../dist/models/log');
+const AppError = require('../dist/appError');
+const errorHandler = require('../dist/errorHandler');
+const fetch = require('../dist/fetch');
 
 
 describe('logging', () => {

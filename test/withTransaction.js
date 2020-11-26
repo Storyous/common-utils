@@ -2,18 +2,17 @@
 
 const { describe, it, beforeEach } = require('mocha');
 const assert = require('assert').strict;
-const getMongoClient = require('./getMongoClient');
-const getCollection = require('../lib/getCollection');
+require('./getMongoClient');
+const { getCollection, withTransaction } = require('../dist');
 
-const withTransaction = require('../lib/withTransaction');
 
 describe('withTransaction', () => {
 
     let testCollection;
     beforeEach(async () => {
-        (await getMongoClient()).db().createCollection('withTransactionTests');
         testCollection = getCollection('withTransactionTests');
-        testCollection.removeMany();
+        await testCollection.insertOne({}); // ensure the collection is created before tests
+        await testCollection.removeMany();
     });
 
     it('should commit the transaction', async () => {

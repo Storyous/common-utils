@@ -1,19 +1,20 @@
 'use strict';
 
-const _ = require('lodash');
-const appData = require('../appData');
+import _ from 'lodash';
+import appData from '../appData';
 
 const DOCUMENT_ID = 'migrations';
 
+type DoneCallback = (err: unknown|null, state?: unknown) => void;
 
 class MigrationsStore {
 
-    save (set, done) {
+    save (set: Object, done: DoneCallback) {
         appData.updateDocument(DOCUMENT_ID, { $set: _.pick(set, ['lastRun', 'migrations']) }, true)
             .then((state) => { done(null, state); }, done);
     }
 
-    load (done) {
+    load (done: DoneCallback) {
         appData.getDocument(DOCUMENT_ID)
             .then((state) => {
                 done(null, state || {
@@ -24,4 +25,4 @@ class MigrationsStore {
     }
 }
 
-module.exports = MigrationsStore;
+export default MigrationsStore;

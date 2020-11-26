@@ -3,7 +3,7 @@
 const { it, describe } = require('mocha');
 const assert = require('assert');
 const crypto = require('crypto');
-const Secrets = require('../lib/secrets');
+const Secrets = require('../dist/secrets');
 
 
 describe('secrets', () => {

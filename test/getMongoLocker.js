@@ -4,7 +4,7 @@ const assert = require('assert');
 const sinon = require('sinon');
 const { it, describe, beforeEach } = require('mocha');
 const { times, pick } = require('lodash');
-const getMongoLocker = require('../lib/getMongoLocker');
+const getMongoLocker = require('../dist/getMongoLocker');
 const getMongoClient = require('./getMongoClient');
 
 describe('getMongoLocker', () => {
