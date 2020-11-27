@@ -173,7 +173,7 @@ describe('Using Koa with correlationId', () => {
                 'Content-Type': 'application/json'
             }
         });
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 50));
         fetch(`http://localhost:${port}/valid/path`, {
             method: 'post',
             body: JSON.stringify({ something: 2 }),
