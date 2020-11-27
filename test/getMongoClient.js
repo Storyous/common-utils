@@ -2,7 +2,7 @@
 
 const { before, after } = require('mocha');
 require('./config');
-const { mongoClient } = require('../dist');
+const { mongoClient } = require('../lib');
 
 let connectPromise;
 

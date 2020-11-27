@@ -3,7 +3,7 @@
 const { describe, it, beforeEach } = require('mocha');
 const assert = require('assert').strict;
 require('./getMongoClient');
-const { getCollection, withTransaction } = require('../dist');
+const { getCollection, withTransaction } = require('../lib');
 
 
 describe('withTransaction', () => {

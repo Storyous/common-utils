@@ -39,7 +39,7 @@ apiTestUtil becomes testUtils. New usage:
 
 #### `config/testing.config.json`
 ```javascript
-const testUtils = require('@storyous/common-utils/lib/testUtils');
+const testUtils = require('@storyous/common-utils/oldlib/testUtils');
 
 module.exports = {
    mongodbUrl: testUtils.uniqueDatabase(process.env.MONGODB_URI) // this will generate timestamp-postfixed database name 
@@ -50,7 +50,7 @@ module.exports = {
 
 #### `test/api.js`
 ```javascript
-const testUtils = require('@storyous/common-utils/lib/testUtils');
+const testUtils = require('@storyous/common-utils/oldlib/testUtils');
 const mocha = require('mocha');
 const app = require('../app'); // this has to be a function providing Koa function
 

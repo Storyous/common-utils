@@ -2,7 +2,7 @@
 
 const { describe, it } = require('mocha');
 const assert = require('assert');
-const validator = require('../dist/requestValidator');
+const validator = require('../lib/requestValidator');
 
 describe('requestValidator', () => {
 

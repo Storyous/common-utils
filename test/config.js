@@ -3,7 +3,7 @@
 const { describe, it } = require('mocha');
 const assert = require('assert');
 
-const config = require('../dist/config');
+const config = require('../lib/config');
 
 describe('Configurator', () => {
 
