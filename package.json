@@ -2,8 +2,8 @@
   "name": "@storyous/common-utils",
   "version": "14.3.0",
   "description": "Common utils for storyous microservices",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "bin": {
     "download-translations": "./scripts/download-translations.js"
   },
