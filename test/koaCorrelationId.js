@@ -14,6 +14,7 @@ const log = require('../lib/models/log');
 
 const logModule = log.module('extraInfo');
 const port = 6789;
+const appName = '@storyous/common-utils';
 
 async function b (something) {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -93,12 +94,14 @@ describe('Using Koa with correlationId', () => {
         const { correlationId } = logs[0];
         assert.deepStrictEqual(logs, [
             {
+                appName,
                 correlationId,
                 message: 'Message with correlationId',
                 level: 'info',
                 something: 1
             },
             {
+                appName,
                 correlationId,
                 module: 'extraInfo',
                 message: 'Still correlationId and module name as well',
@@ -106,6 +109,7 @@ describe('Using Koa with correlationId', () => {
                 something: 1
             },
             {
+                appName,
                 correlationId,
                 message: 'Inside function still have same correlationId',
                 level: 'info',
@@ -130,6 +134,7 @@ describe('Using Koa with correlationId', () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
         assert.deepStrictEqual(logs, [
             {
+                appName,
                 something: 2,
                 correlationId: 'myCorrelationId',
                 sessionId: 'mySessionId',
@@ -137,6 +142,7 @@ describe('Using Koa with correlationId', () => {
                 level: 'info'
             },
             {
+                appName,
                 something: 2,
                 correlationId: 'myCorrelationId',
                 sessionId: 'mySessionId',
@@ -145,6 +151,7 @@ describe('Using Koa with correlationId', () => {
                 level: 'info'
             },
             {
+                appName,
                 something: 2,
                 correlationId: 'myCorrelationId',
                 sessionId: 'mySessionId',
@@ -179,12 +186,14 @@ describe('Using Koa with correlationId', () => {
         const correlationId2 = logs[2].correlationId;
         assert.deepStrictEqual(logs, [
             {
+                appName,
                 correlationId: correlationId1,
                 message: 'Message with correlationId',
                 level: 'info',
                 something: 1
             },
             {
+                appName,
                 correlationId: correlationId1,
                 module: 'extraInfo',
                 message: 'Still correlationId and module name as well',
@@ -192,12 +201,14 @@ describe('Using Koa with correlationId', () => {
                 something: 1
             },
             {
+                appName,
                 correlationId: correlationId2,
                 message: 'Message with correlationId',
                 level: 'info',
                 something: 2
             },
             {
+                appName,
                 correlationId: correlationId2,
                 module: 'extraInfo',
                 message: 'Still correlationId and module name as well',
@@ -205,12 +216,14 @@ describe('Using Koa with correlationId', () => {
                 something: 2
             },
             {
+                appName,
                 something: 1,
                 correlationId: correlationId1,
                 message: 'Inside function still have same correlationId',
                 level: 'info'
             },
             {
+                appName,
                 something: 2,
                 correlationId: correlationId2,
                 message: 'Inside function still have same correlationId',
