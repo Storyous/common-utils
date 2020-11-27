@@ -5,12 +5,23 @@ require('winston-loggly-bulk');
 const TransportStream = require('winston-transport');
 const Sentry = require('@sentry/node');
 const { clone, isError } = require('lodash');
+const appRoot = require('app-root-path');
 
 const { logging, env } = require('../config');
 const clsAdapter = require('./clsAdapter');
 
 const transportEnabled = (name) => logging[name] && !logging[name].silent;
 
+let appName = 'nonresolved';
+
+try {
+    // eslint-disable-next-line global-require,import/no-dynamic-require
+    const packageJson = require(`${appRoot.path}/package.json`);
+    appName = packageJson.name || 'nonresolved';
+} catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err, 'Unable to resolve the name of app for logs');
+}
 
 function _findAndHidePassword (arg) {
 
@@ -36,14 +47,18 @@ const logger = createLogger({
     format: format.combine(
         format((info) => {
             if (isError(info)) {
-                return { ...info, stack: info.stack };
+                return {
+                    ...info,
+                    stack: info.stack
+                };
             }
             return info;
         })(),
         // Redact any properties
         format((info) => _findAndHidePassword(info))()
     )
-});
+})
+    .child({ appName });
 
 if (transportEnabled('console')) {
     const options = {
@@ -61,7 +76,10 @@ if (transportEnabled('sentry')) {
 
     const { sentry: config } = logging;
 
-    Sentry.init({ dsn: config.dsn, environment: env });
+    Sentry.init({
+        dsn: config.dsn,
+        environment: env
+    });
 
     const levelMap = {
         silly: Sentry.Severity.Debug,

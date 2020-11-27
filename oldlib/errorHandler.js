@@ -4,7 +4,6 @@ const { pick, isEmpty } = require('lodash');
 const AppError = require('./appError');
 const log = require('./models/log').module('API');
 
-
 module.exports = async function (ctx, next) {
 
     try {
@@ -65,13 +64,13 @@ module.exports = async function (ctx, next) {
         err.setMeta(metaData);
 
         if (err.httpStatus === 404 || err.httpStatus === 401 || err.httpStatus === 429) {
-            log.warn(err);
+            log.id().warn(err);
 
         } else if (err.httpStatus === 500 || err.httpStatus === 408) {
-            log.error(err);
+            log.id().error(err);
 
         } else {
-            log.info(err);
+            log.id().info(err);
         }
 
         ctx.body = {

@@ -30,9 +30,10 @@
   "license": "ISC",
   "dependencies": {
     "@sentry/node": "^5.20.1",
-    "cls-hooked": "^4.2.2",
     "@types/lodash": "^4.14.165",
     "@types/mongodb": "^3.5.34",
+    "app-root-path": "^3.0.0",
+    "cls-hooked": "^4.2.2",
     "commander": "^6.1.0",
     "handlebars": "^4.7.3",
     "i18next": "^19.7.0",
