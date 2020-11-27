@@ -34,6 +34,7 @@ app.use(koaBody({ includeUnparsed: true }));
 
 app.use(async (ctx, next) => {
     if (ctx.req.url !== '/winston') {
+        await new Promise((resolve) => setTimeout(resolve, 10));
         log.id()
             .info('Message with correlationId', { something: ctx.request.body.something });
     }
@@ -57,6 +58,7 @@ router.post('/winston',
 
 router.post('/valid/path',
     async (ctx) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
         logModule.id()
             .info('Still correlationId and module name as well', { something: ctx.request.body.something });
         ctx.body = 'something';
