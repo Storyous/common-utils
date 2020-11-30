@@ -1,2 +1,2 @@
-/lib/models/migrations/template.js
-/dist
+/src/models/migrations/template.js
+/lib

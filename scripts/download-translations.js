@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { program } = require('commander');
-const fetch = require('../lib/fetch');
+const fetch = require('../src/fetch');
 
 program.requiredOption('--token <token>', 'lingohub token');
 program.requiredOption('--project <project>', 'lingohub project');

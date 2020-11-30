@@ -3,9 +3,11 @@
     "compilerOptions": {
         "allowJs": true,
         "declaration": true,
-        "outDir": "dist",
+        "outDir": "lib",
         "sourceMap": true,
         "newLine": "lf"
     },
-    "include": ["lib/**/*"]
+    "include": [
+      "src/**/*"
+    ]
 }
