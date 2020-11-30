@@ -10,7 +10,7 @@
   "scripts": {
     "test": "run-p test:lint build --aggregate-output && npm run test:mocha",
     "test:mocha": "cd test && mocha ./",
-    "test:lint": "eslint oldlib",
+    "test:lint": "eslint src",
     "dev": "tsc --watch",
     "build": "rimraf lib && tsc",
     "prepublishOnly": "npm run build"
