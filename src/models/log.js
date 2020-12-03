@@ -55,7 +55,19 @@ const logger = createLogger({
             return info;
         })(),
         // Redact any properties
-        format((info) => _findAndHidePassword(info))()
+        format((info) => _findAndHidePassword(info))(),
+        format((info) => {
+            const updated = {
+                ...info,
+                correlationId: clsAdapter.getCorrelationId()
+            };
+
+            if (clsAdapter.getSessionId()) {
+                updated.sessionId = clsAdapter.getSessionId();
+            }
+
+            return updated;
+        })()
     )
 })
     .child({ appName });
@@ -142,25 +154,6 @@ if (transportEnabled('loggly')) {
  * @returns {winston.Logger}
  */
 logger.module = (moduleName) => logger.child({ module: moduleName });
-
-/**
- * Usage
- * logger.id().info('hmmm', { more: 'info' });
- * @return {Span | winston.Logger}
- */
-logger.id = function () {
-    const attachedProperties = {
-        correlationId: clsAdapter.getCorrelationId()
-    };
-
-    if (clsAdapter.getSessionId()) {
-        attachedProperties.sessionId = clsAdapter.getSessionId();
-    }
-
-    // By using `this` I can use the object that is calling this function
-    // If I use logger.child directly here, the logger.module is no more compatible.
-    return this.child(attachedProperties);
-};
 
 /**
  * Usage

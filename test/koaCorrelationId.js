@@ -18,8 +18,7 @@ const appName = '@storyous/common-utils';
 
 async function b (something) {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    log.id()
-        .info('Inside function still have same correlationId', { something });
+    log.info('Inside function still have same correlationId', { something });
 }
 
 async function a (something) {
@@ -35,8 +34,7 @@ app.use(koaBody({ includeUnparsed: true }));
 app.use(async (ctx, next) => {
     if (ctx.req.url !== '/winston') {
         await new Promise((resolve) => setTimeout(resolve, 10));
-        log.id()
-            .info('Message with correlationId', { something: ctx.request.body.something });
+        log.info('Message with correlationId', { something: ctx.request.body.something });
     }
     await next();
 });
@@ -59,8 +57,7 @@ router.post('/winston',
 router.post('/valid/path',
     async (ctx) => {
         await new Promise((resolve) => setTimeout(resolve, 10));
-        logModule.id()
-            .info('Still correlationId and module name as well', { something: ctx.request.body.something });
+        logModule.info('Still correlationId and module name as well', { something: ctx.request.body.something });
         ctx.body = 'something';
         await a(ctx.request.body.something);
     });
