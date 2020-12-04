@@ -20,6 +20,7 @@ import parseForHuman from './parseFloatHuman';
 import requestValidator from './requestValidator';
 import getMongoCachedJSONFetcher from './getMongoCachedJSONFetcher';
 import getMongoLocker from './getMongoLocker';
+import mongoLocker from './mongoLocker';
 import secrets from './secrets';
 import mongoErrorCodes from './mongoErrorCodes';
 import externalId from './externalId';
@@ -40,6 +41,7 @@ export {
     requestValidator,
     getMongoCachedJSONFetcher,
     getMongoLocker,
+    mongoLocker,
     secrets,
     middlewares,
     mongoErrorCodes,
