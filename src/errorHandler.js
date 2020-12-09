@@ -64,13 +64,13 @@ module.exports = async function (ctx, next) {
         err.setMeta(metaData);
 
         if (err.httpStatus === 404 || err.httpStatus === 401 || err.httpStatus === 429) {
-            log.id().warn(err);
+            log.warn(err);
 
         } else if (err.httpStatus === 500 || err.httpStatus === 408) {
-            log.id().error(err);
+            log.error(err);
 
         } else {
-            log.id().info(err);
+            log.info(err);
         }
 
         ctx.body = {
