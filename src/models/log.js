@@ -4,7 +4,9 @@ const { createLogger, format, transports } = require('winston');
 require('winston-loggly-bulk');
 const TransportStream = require('winston-transport');
 const Sentry = require('@sentry/node');
-const { clone, isError } = require('lodash');
+const {
+    clone, isError, get, omit
+} = require('lodash');
 const appRoot = require('app-root-path');
 
 const { logging, env } = require('../config');
@@ -73,13 +75,31 @@ const logger = createLogger({
     .child({ appName });
 
 if (transportEnabled('console')) {
-    const options = {
+    let options = {
         format: format.combine(
             format.colorize(),
             format.simple()
         ),
         ...logging.console
     };
+    if (get(logging, 'console.prettyOutput')) {
+        const logStackAndOmitIt = format((info) => {
+            if (info.stack) {
+                // eslint-disable-next-line no-console
+                console.error(info.stack);
+                return omit(info, 'stack');
+            }
+            return info;
+        });
+
+        options = {
+            format: format.combine(
+                logStackAndOmitIt(),
+                format.prettyPrint()
+            )
+        };
+    }
+
     logger.add(new transports.Console(options));
 }
 
