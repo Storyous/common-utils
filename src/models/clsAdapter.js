@@ -11,6 +11,9 @@
 const continuationLocalStorage = require('cls-hooked');
 const { generateRandomAlphanumeric } = require('../utils');
 
+const correlationIdHeader = 'x-correlation-id';
+const sessionIdHeader = 'x-session-id';
+
 // lowercase, uppercase and numbers contains about 60 different characters
 // having length of 6 allows 60^6=46,656,000,000 possibilities which means we barely get any conflict
 // and even if we do so - correlationId is not unique-critical functionality, while
@@ -25,15 +28,23 @@ class ContextFactory {
             await new Promise(namespace.bind(function (resolve, reject) {
                 namespace.set(
                     'correlationId',
-                    ctx.request.headers['x-correlation-id'] || generateRandomAlphanumeric(correlationIdLength)
+                    ctx.get(correlationIdHeader) || generateRandomAlphanumeric(correlationIdLength)
                 );
 
-                if (ctx.request.headers['x-session-id']) {
-                    namespace.set('sessionId', ctx.request.headers['x-session-id']);
+                const sessionId = ctx.get(sessionIdHeader) || ctx.get('x-device-id') || ctx.get('deviceid') || null;
+
+                if (sessionId) {
+                    namespace.set('sessionId', ctx.request.headers[sessionIdHeader]);
                 }
 
                 namespace.bindEmitter(ctx.req);
                 namespace.bindEmitter(ctx.res);
+
+                ctx.set(correlationIdHeader, ContextFactory.getCorrelationId());
+
+                if (ContextFactory.getSessionId()) {
+                    ctx.set(sessionIdHeader, ContextFactory.getSessionId());
+                }
 
                 next()
                     .then(resolve)
@@ -52,7 +63,7 @@ class ContextFactory {
     //         namespace.run(() => {
     //             namespace.set(
     //                 'correlationId',
-    //                 req.headers['x-correlation-id'] || generateRandomAlphanumeric(correlationIdLength)
+    //                 req.headers[correlationIdHeader] || generateRandomAlphanumeric(correlationIdLength)
     //             );
     //
     //             next();
