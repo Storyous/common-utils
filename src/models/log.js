@@ -1,13 +1,25 @@
 'use strict';
 
-const { createLogger, format, transports } = require('winston');
+const {
+    createLogger,
+    format,
+    transports
+} = require('winston');
 require('winston-loggly-bulk');
 const TransportStream = require('winston-transport');
 const Sentry = require('@sentry/node');
-const { clone, isError } = require('lodash');
+const {
+    clone,
+    isError,
+    get,
+    omit
+} = require('lodash');
 const appRoot = require('app-root-path');
 
-const { logging, env } = require('../config');
+const {
+    logging,
+    env
+} = require('../config');
 const clsAdapter = require('./clsAdapter');
 
 const transportEnabled = (name) => logging[name] && !logging[name].silent;
@@ -73,13 +85,33 @@ const logger = createLogger({
     .child({ appName });
 
 if (transportEnabled('console')) {
-    const options = {
+    let options = {
         format: format.combine(
             format.colorize(),
             format.simple()
         ),
         ...logging.console
     };
+    // Use for localhost development only, it will output nicely readable logs
+    // and if error appears the stack will be clickable in webstorm
+    if (get(logging, 'console.prettyOutput')) {
+        const logStackAndOmitIt = format((info) => {
+            if (info.stack) {
+                // eslint-disable-next-line no-console
+                console.error(info.stack);
+                return omit(info, 'stack');
+            }
+            return info;
+        });
+
+        options = {
+            format: format.combine(
+                logStackAndOmitIt(),
+                format.prettyPrint()
+            )
+        };
+    }
+
     logger.add(new transports.Console(options));
 }
 
