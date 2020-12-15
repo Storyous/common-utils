@@ -89,6 +89,22 @@ changed to
 getCollection('collectionName')
 ``` 
 
+### 15.0
+
+To have human-readable logs and errors, add
+
+```javascript
+    logging: {
+        console: {
+            prettyOutput: true,
+        },
+    },
+```
+
+to `development.config.js`
+
+Do NOT use anywhere else
+
 ## MongoCachedFetcher
 
 ### Usage:  
