@@ -34,7 +34,7 @@ class ContextFactory {
                 const sessionId = ctx.get(sessionIdHeader) || ctx.get('x-device-id') || ctx.get('deviceid') || null;
 
                 if (sessionId) {
-                    namespace.set('sessionId', ctx.request.headers[sessionIdHeader]);
+                    namespace.set('sessionId', ctx.get(sessionIdHeader));
                 }
 
                 namespace.bindEmitter(ctx.req);
@@ -42,7 +42,7 @@ class ContextFactory {
 
                 ctx.set(correlationIdHeader, ContextFactory.getCorrelationId());
 
-                if (ContextFactory.getSessionId()) {
+                if (sessionId) {
                     ctx.set(sessionIdHeader, ContextFactory.getSessionId());
                 }
 
