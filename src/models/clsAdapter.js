@@ -26,25 +26,22 @@ class ContextFactory {
 
         return async function (ctx, next) {
             await new Promise(namespace.bind(function (resolve, reject) {
-                namespace.set(
-                    'correlationId',
-                    ctx.get(correlationIdHeader) || generateRandomAlphanumeric(correlationIdLength)
-                );
-
+                const correlationId = ctx.get(correlationIdHeader) || generateRandomAlphanumeric(correlationIdLength);
                 const sessionId = ctx.get(sessionIdHeader) || ctx.get('x-device-id') || ctx.get('deviceid') || null;
 
+                namespace.set(
+                    'correlationId',
+                    correlationId,
+                );
+                ctx.set(correlationIdHeader, correlationId);
+
                 if (sessionId) {
-                    namespace.set('sessionId', ctx.get(sessionIdHeader));
+                    namespace.set('sessionId', sessionId);
+                    ctx.set(sessionIdHeader, sessionId);
                 }
 
                 namespace.bindEmitter(ctx.req);
                 namespace.bindEmitter(ctx.res);
-
-                ctx.set(correlationIdHeader, ContextFactory.getCorrelationId());
-
-                if (sessionId) {
-                    ctx.set(sessionIdHeader, ContextFactory.getSessionId());
-                }
 
                 next()
                     .then(resolve)
