@@ -231,6 +231,25 @@ describe('Using Koa with correlationId', () => {
         ]);
     });
 
+    it('should have correlation and session id headers in response', async () => {
+        logs = [];
+
+        const response = await fetch(`http://localhost:${port}/valid/path`, {
+            method: 'post',
+            body: JSON.stringify({ something: 1 }),
+            headers: {
+                'Content-Type': 'application/json',
+                'x-session-id': 'some-custom-session-id'
+            }
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const { correlationId, sessionId } = logs[0];
+        assert.strictEqual(correlationId, response.headers.get('x-correlation-id'));
+        assert.strictEqual(sessionId, 'some-custom-session-id');
+        assert.strictEqual(sessionId, response.headers.get('x-session-id'));
+    });
+
 
     after(async () => {
         log.remove(httpWinstonTransport);

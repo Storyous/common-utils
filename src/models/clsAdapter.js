@@ -11,6 +11,9 @@
 const continuationLocalStorage = require('cls-hooked');
 const { generateRandomAlphanumeric } = require('../utils');
 
+const correlationIdHeader = 'x-correlation-id';
+const sessionIdHeader = 'x-session-id';
+
 // lowercase, uppercase and numbers contains about 60 different characters
 // having length of 6 allows 60^6=46,656,000,000 possibilities which means we barely get any conflict
 // and even if we do so - correlationId is not unique-critical functionality, while
@@ -23,13 +26,18 @@ class ContextFactory {
 
         return async function (ctx, next) {
             await new Promise(namespace.bind(function (resolve, reject) {
+                const correlationId = ctx.get(correlationIdHeader) || generateRandomAlphanumeric(correlationIdLength);
+                const sessionId = ctx.get(sessionIdHeader) || ctx.get('x-device-id') || ctx.get('deviceid') || null;
+
                 namespace.set(
                     'correlationId',
-                    ctx.request.headers['x-correlation-id'] || generateRandomAlphanumeric(correlationIdLength)
+                    correlationId,
                 );
+                ctx.set(correlationIdHeader, correlationId);
 
-                if (ctx.request.headers['x-session-id']) {
-                    namespace.set('sessionId', ctx.request.headers['x-session-id']);
+                if (sessionId) {
+                    namespace.set('sessionId', sessionId);
+                    ctx.set(sessionIdHeader, sessionId);
                 }
 
                 namespace.bindEmitter(ctx.req);
@@ -52,7 +60,7 @@ class ContextFactory {
     //         namespace.run(() => {
     //             namespace.set(
     //                 'correlationId',
-    //                 req.headers['x-correlation-id'] || generateRandomAlphanumeric(correlationIdLength)
+    //                 req.headers[correlationIdHeader] || generateRandomAlphanumeric(correlationIdLength)
     //             );
     //
     //             next();
