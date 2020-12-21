@@ -22,6 +22,7 @@ jobs:
       - run: echo $remoteVersion
       - run: echo "something something"
       - run: echo "something something" + $remoteVersion
+      - run: echo (npm view @storyous/common-utils version)
 
   test:
     needs: [get-npm-version]
