@@ -22,6 +22,7 @@ vercomp () {
         fi
         if ((10#${ver1[i]} > 10#${ver2[i]}))
         then
+            echo "Update your package.json version"
             return 1
         fi
         if ((10#${ver1[i]} < 10#${ver2[i]}))
@@ -29,15 +30,16 @@ vercomp () {
             return 0
         fi
     done
+    echo "Update your package.json version"
     return 2
 }
 
 testvercomp () {
     vercomp $1 $2
     case $? in
-        2) op='=';;
+        0) op='=';;
         1) op='>';;
-        0) op='<';;
+        2) op='<';;
     esac
     if [[ $op != $3 ]]
     then
