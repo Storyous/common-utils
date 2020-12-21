@@ -20,6 +20,9 @@ jobs:
         mongodb-version: [4.2]
 
     steps:
+    - name: Check package version
+      uses: technote-space/package-version-check-action@v1
+          
     - uses: actions/checkout@v2
     - name: Start MongoDB
       uses: supercharge/mongodb-github-action@1.3.0
