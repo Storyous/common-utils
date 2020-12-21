@@ -18,13 +18,12 @@ jobs:
         with:
           node-version: 12
           registry-url: https://registry.npmjs.org/
-      - run: |
-          export remoteVersion=$(npm view @storyous/common-utils version)
-          echo "::set-env name=remoteVersion::$remoteVersion"
       - name: get-npm-version
         id: package-version
         uses: martinbeentjes/npm-get-version-action@master
-      - run: echo $remoteVersion ${{ steps.package-version.outputs.current-version}}
+      - run: |
+          export remoteVersion=$(npm view @storyous/common-utils version)
+          echo $remoteVersion ${{ steps.package-version.outputs.current-version}}
 
   test:
     needs: [get-npm-version]
