@@ -3,7 +3,8 @@
 vercomp () {
     if [[ $1 == $2 ]]
     then
-        return 0
+        echo "Update your package.json version"
+        return 3
     fi
     local IFS=.
     local i ver1=($1) ver2=($2)
