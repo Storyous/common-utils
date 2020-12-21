@@ -22,14 +22,16 @@ vercomp () {
         fi
         if ((10#${ver1[i]} > 10#${ver2[i]}))
         then
+            echo "Update your package.json version"
             return 1
         fi
         if ((10#${ver1[i]} < 10#${ver2[i]}))
         then
-            return 2
+            return 0
         fi
     done
-    return 0
+    echo "Update your package.json version"
+    return 2
 }
 
 testvercomp () {
