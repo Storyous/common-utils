@@ -26,18 +26,18 @@ vercomp () {
         fi
         if ((10#${ver1[i]} < 10#${ver2[i]}))
         then
-            return 0
+            return 2
         fi
     done
-    return 2
+    return 0
 }
 
 testvercomp () {
     vercomp $1 $2
     case $? in
-        2) op='=';;
+        0) op='=';;
         1) op='>';;
-        0) op='<';;
+        2) op='<';;
     esac
     if [[ $op != $3 ]]
     then
