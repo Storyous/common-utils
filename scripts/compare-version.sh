@@ -44,5 +44,6 @@ testvercomp () {
         exit 1
     else
         echo "Pass: '$1 $op $2'"
+        exit 0
     fi
 }
