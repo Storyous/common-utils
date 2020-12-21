@@ -29,3 +29,20 @@ vercomp () {
     done
     return 0
 }
+
+testvercomp () {
+    vercomp $1 $2
+    case $? in
+        0) op='=';;
+        1) op='>';;
+        2) op='<';;
+    esac
+    if [[ $op != $3 ]]
+    then
+        echo "FAIL: Expected '$3', Actual '$op', Arg1 '$1', Arg2 '$2'"
+        echo "Update your package.json version"
+        exit 1
+    else
+        echo "Pass: '$1 $op $2'"
+    fi
+}
