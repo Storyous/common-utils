@@ -20,6 +20,8 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: export remoteVersion=(npm view @storyous/common-utils version)
       - run: echo $remoteVersion
+      - run: echo "something something"
+      - run: echo "something something" + $remoteVersion
 
   test:
     needs: [get-npm-version]
