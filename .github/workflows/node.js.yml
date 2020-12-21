@@ -22,7 +22,7 @@ jobs:
       - name: get-npm-version
         id: package-version
         uses: martinbeentjes/npm-get-version-action@master
-      - run: echo $remoteVersion $current-version
+      - run: echo $remoteVersion $(current-version)
 
   test:
     needs: [get-npm-version]
