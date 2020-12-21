@@ -23,7 +23,7 @@ jobs:
         uses: martinbeentjes/npm-get-version-action@master
       - run: |
           export remoteVersion=$(npm view @storyous/common-utils version)
-          echo $remoteVersion ${{ steps.package-version.outputs.current-version}}
+          echo Remote version: $remoteVersion Local version: ${{ steps.package-version.outputs.current-version}}
           source ./scripts/compare-version.sh
           vercomp $remoteVersion ${{ steps.package-version.outputs.current-version}}
 
