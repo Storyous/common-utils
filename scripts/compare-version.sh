@@ -31,7 +31,9 @@ vercomp () {
 }
 
 testvercomp () {
+    echo $1 $2 $3
     vercomp $1 $2
+    echo "resolved"
     case $? in
         0) op='=';;
         1) op='>';;
