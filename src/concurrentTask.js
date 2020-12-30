@@ -19,7 +19,7 @@ const attemptRecursive = async (task, startAttemptsDelay, latestTime, callNumber
 
 /**
  * noLaterThan = In what time by now should be the latest attempt executed
- * Starting attempts delay = Starting attempts delay
+ * startAttemptsDelay = Starting attempts delay
  *
  * @param {function (): Promise.<T>} task
  * @param {{
