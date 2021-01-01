@@ -1,17 +1,21 @@
 'use strict';
 
-const nodeFetch = require('node-fetch');
-const { omitBy, isUndefined } = require('lodash');
+import nodeFetch, { RequestInit, Response } from 'node-fetch';
+import { omitBy, isUndefined } from 'lodash';
 const AppError = require('./appError');
 
-const omitUndefined = (object) => omitBy(object, isUndefined);
+type EnrichedRequestOptions = RequestInit & {
+    expectOk?: boolean,
+    parseResponseAs?: 'json'|'text',
+};
 
-const errorWith = (error, originalStack, url, options, response, responseText) => {
+const omitUndefined = (object: Object) => omitBy(object, isUndefined);
 
-    let err = error;
-    if (!(err instanceof AppError)) {
-        err = new AppError(err.message);
-    }
+const errorWith = (error: Error, originalStack: string, url: string, options: RequestInit, response?: Response, responseText?: string) => {
+
+    let err = error instanceof AppError
+        ? error
+        : new AppError(error.message);
 
     err.setMeta(omitUndefined({
         request: omitUndefined({ url, method: options.method || 'GET', body: options.body }),
@@ -31,16 +35,9 @@ const errorWith = (error, originalStack, url, options, response, responseText) =
 };
 
 /**
- * @param {string} url
- * @param {{
- *     expectOk?: boolean
- *     parseResponseAs?: 'json'|'text'
- * }} [options] - extended Fetch options
- * @returns {Promise.<nodeFetch.Response|string|*>}
- *
  * Returns Response object or parsed body value if parseResponseAs is specified
  */
-async function fetch (url, options = {}) {
+async function fetch (url: string, options: EnrichedRequestOptions = {}): Promise<Response|string|any> {
 
     const {
         expectOk = true,
@@ -52,7 +49,7 @@ async function fetch (url, options = {}) {
         throw new Error('Invalid parseResponse option.');
     }
 
-    const originalStack = new Error().stack;
+    const originalStack = new Error().stack!;
 
     let response;
 
@@ -102,7 +99,7 @@ async function fetch (url, options = {}) {
  * @param {Object} [options]
  * @returns {Promise} Returns parsed JSON body
  */
-fetch.json = async (url, options) => fetch(url, {
+fetch.json = async (url: string, options: RequestInit) => fetch(url, {
     ...options,
     parseResponseAs: 'json'
 });
@@ -112,7 +109,7 @@ fetch.json = async (url, options) => fetch(url, {
  * @param {Object} [options]
  * @returns {Promise} Returns parsed text body
  */
-fetch.text = async (url, options) => fetch(url, {
+fetch.text = async (url: string, options: RequestInit) => fetch(url, {
     ...options,
     parseResponseAs: 'text'
 });
