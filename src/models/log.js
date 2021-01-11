@@ -197,5 +197,10 @@ logger.module = (moduleName) => logger.child({ module: moduleName });
  */
 logger.initKoa = () => clsAdapter.getKoaMiddleware();
 
+/**
+ * Returns current correlationId if it is specified by KoaMiddleware
+ */
+logger.getCorrelationId = () => clsAdapter.getCorrelationId();
+
 
 module.exports = logger;
