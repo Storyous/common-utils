@@ -1,6 +1,7 @@
 # Common JS utils
 
 ## Migration guide
+
 ### 4.4.2
 
 Prometheus middleware `getHttpRequestMetricsMiddleware` is now deprecated, you should remove it, same metrics can be aggregated from `getRequestDurationMetricsMiddleware` alone 
@@ -104,6 +105,26 @@ To have human-readable logs and errors, add
 to `development.config.js`
 
 Do NOT use anywhere else
+
+
+### 15.3
+Default ```mongoLocker()``` function introduced. Use a prefix for the key when you want to use it in multiple places in the app. Example:
+
+```javascript
+// tokenStorage.js
+await mongoLocker('token-renewal-process', async () => {
+    // some async stuff
+    // ...
+    return 'myToken';
+});
+
+// payments.js - completely idempendent part of application
+const transactionResult = await mongoLocker(`payment-transaction-${merchantId}`, async () => {
+    // some async stuff
+    // ...
+    return true;
+});
+```
 
 ## MongoCachedFetcher
 

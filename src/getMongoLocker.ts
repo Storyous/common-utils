@@ -1,30 +1,28 @@
 'use strict';
 
-const { ObjectId } = require('mongodb');
-const mongoErrorCodes = require('./mongoErrorCodes');
-const concurrentTask = require('./concurrentTask');
-const AppError = require('./appError');
+import { ObjectId, Collection } from 'mongodb';
+import mongoErrorCodes from './mongoErrorCodes';
+import concurrentTask from './concurrentTask';
+import AppError from './appError';
 
-/**
- * @callback Locker
- * @param {*} key
- * @param {Function} callback
- * @param {{
- *     noLaterThan?: number
- *     startAttemptsDelay?: number
- * }} [options]
- * @returns {Promise<*>}
- */
+export type LockKey = string | number | ObjectId;
 
-/**
- * @param {Collection} collection
- * @returns {Promise<Locker>}
- */
-module.exports = async (collection) => {
+export type LockCallback<T> = () => Promise<T>;
+
+export type LockerOptions = {
+    noLaterThan?: number,
+    startAttemptsDelay?: number
+};
+
+export default async (collection: Collection) => {
 
     await collection.createIndex({ acquiredAt: 1 }, { expireAfterSeconds: 120 });
 
-    return async (key, callback, { noLaterThan = 1000, startAttemptsDelay = 50 } = {}) => {
+    return async <T>(
+        key: LockKey,
+        callback: LockCallback<T>,
+        { noLaterThan = 1000, startAttemptsDelay = 50 }: LockerOptions = {}
+    ): Promise<T> => {
 
         const lockId = new ObjectId();
 
