@@ -1,6 +1,9 @@
 'use strict';
 
-const { describe, it } = require('mocha');
+const {
+    describe,
+    it
+} = require('mocha');
 const MockedServer = require('mocked-server');
 const assert = require('assert');
 
@@ -14,6 +17,7 @@ describe('fetch', () => {
     const withResponse = (status, body = null) => (ctx) => {
         ctx.body = body;
         ctx.status = status;
+        ctx.set('x-correlation-id', ctx.get('x-correlation-id'));
     };
 
     const server = new MockedServer(url);
@@ -25,6 +29,14 @@ describe('fetch', () => {
         assert.deepStrictEqual(await response.json(), { ok: true });
     });
 
+    it('should be ok and have correlationId in header', async () => {
+        server.endpoint.handleNext(withResponse(200, '{"ok": true}'));
+        const response = await fetch(url);
+        assert.deepStrictEqual(await response.json(), { ok: true });
+        const headers = response.headers.raw();
+        assert.deepStrictEqual(headers['x-correlation-id'],['notdefined']);
+    });
+
     it('should rejects with proper meta', async () => {
 
         const status = 500;
@@ -32,7 +44,16 @@ describe('fetch', () => {
         server.endpoint.handleNext(withResponse(status, body));
         await assert.rejects(() => fetch(url), {
             message: 'Response status 500 is not ok',
-            meta: { request: { url, method: 'GET' }, response: { status, body } }
+            meta: {
+                request: {
+                    url,
+                    method: 'GET'
+                },
+                response: {
+                    status,
+                    body
+                }
+            }
         });
 
         const checkNotReceived = server.endpoint.handleNext(async (ctx) => {
@@ -41,7 +62,12 @@ describe('fetch', () => {
         });
         await assert.rejects(() => fetch(url, { timeout: 50 }), {
             message: `network timeout at: ${url}`,
-            meta: { request: { url, method: 'GET' } }
+            meta: {
+                request: {
+                    url,
+                    method: 'GET'
+                }
+            }
         });
         checkNotReceived();
 
@@ -67,7 +93,16 @@ describe('fetch', () => {
             server.endpoint.handleNext(withResponse(status, body));
             await assert.rejects(() => fetch.json(url), {
                 message: 'Response is not valid JSON',
-                meta: { request: { url, method: 'GET' }, response: { status, body } }
+                meta: {
+                    request: {
+                        url,
+                        method: 'GET'
+                    },
+                    response: {
+                        status,
+                        body
+                    }
+                }
             });
         });
     });

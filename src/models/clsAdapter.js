@@ -89,6 +89,9 @@ class ContextFactory {
     }
 
     static getCorrelationId () {
+        if (!this.getContextStorage().correlationId) {
+            return 'notdefined';
+        }
         return this.getContextStorage().correlationId;
     }
 
