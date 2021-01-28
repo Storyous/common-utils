@@ -34,7 +34,7 @@ describe('fetch', () => {
         const response = await fetch(url);
         assert.deepStrictEqual(await response.json(), { ok: true });
         const headers = response.headers.raw();
-        assert.deepStrictEqual(headers['x-correlation-id'],['notdefined']);
+        assert.deepStrictEqual(headers['x-correlation-id'], ['notdefined']);
     });
 
     it('should rejects with proper meta', async () => {
