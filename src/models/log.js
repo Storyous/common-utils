@@ -220,7 +220,6 @@ logger.basicLogMiddleware = () => async (ctx, next) => {
         statusStr: `${ctx.status}`,
         matched,
         duration: new Date() - startTime,
-        // having it also here to have duration and url at one log for graphs
         lastMatched: matched[matched.length - 1]
     });
 };
