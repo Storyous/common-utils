@@ -10,8 +10,25 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  get-npm-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+          registry-url: https://registry.npmjs.org/
+      - name: get-npm-version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@master
+      - run: |
+          export remoteVersion=$(npm view @storyous/common-utils version)
+          echo Remote version: $remoteVersion Local version: ${{ steps.package-version.outputs.current-version}}
+          source ./scripts/compare-version.sh
+          vercomp $remoteVersion ${{ steps.package-version.outputs.current-version}}
 
+  test:
+    needs: [get-npm-version]
     runs-on: ubuntu-latest
 
     strategy:
