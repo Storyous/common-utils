@@ -18,7 +18,10 @@ const appName = '@storyous/common-utils';
 
 async function b (something) {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    log.info('Inside function still have same correlationId', { something });
+    log.info('Inside function still have same correlationId', {
+        something,
+        customGetCorrelationId: log.getCorrelationId()
+    });
 }
 
 async function a (something) {
@@ -111,6 +114,7 @@ describe('Using Koa with correlationId', () => {
                 appName,
                 correlationId,
                 message: 'Inside function still have same correlationId',
+                customGetCorrelationId: correlationId,
                 level: 'info',
                 something: 1
             }
@@ -153,6 +157,7 @@ describe('Using Koa with correlationId', () => {
                 appName,
                 something: 2,
                 correlationId: 'myCorrelationId',
+                customGetCorrelationId: 'myCorrelationId',
                 sessionId: 'mySessionId',
                 message: 'Inside function still have same correlationId',
                 level: 'info'
@@ -218,6 +223,7 @@ describe('Using Koa with correlationId', () => {
                 appName,
                 something: 1,
                 correlationId: correlationId1,
+                customGetCorrelationId: correlationId1,
                 message: 'Inside function still have same correlationId',
                 level: 'info'
             },
@@ -225,6 +231,7 @@ describe('Using Koa with correlationId', () => {
                 appName,
                 something: 2,
                 correlationId: correlationId2,
+                customGetCorrelationId: correlationId2,
                 message: 'Inside function still have same correlationId',
                 level: 'info'
             }
