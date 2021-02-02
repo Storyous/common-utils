@@ -1,7 +1,12 @@
 'use strict';
+const Koa = require('koa');
+const supertest = require('supertest');
 
 require('./config');
-const { describe, it } = require('mocha');
+const {
+    describe,
+    it
+} = require('mocha');
 const log = require('../lib/models/log');
 const AppError = require('../lib/appError');
 const errorHandler = require('../lib/errorHandler');
@@ -33,7 +38,10 @@ describe('logging', () => {
 
         const ctx = {
             request: {
-                query: {}, body: {}, originalUrl: '/aaa/bbb', is: () => false
+                query: {},
+                body: {},
+                originalUrl: '/aaa/bbb',
+                is: () => false
             },
             req: { method: 'GET' },
             get: (h) => h
@@ -51,4 +59,32 @@ describe('logging', () => {
         await new Promise((resolve) => setTimeout(resolve, 1000));
     });
 
+
+    it('should be possible to use log-middleware without params', async () => {
+        const app = new Koa();
+        app.use(log.initKoa());
+        app.use(log.basicLogMiddleware());
+        const server = app.listen();
+
+        // not 500 means it did not fail
+        await supertest(server)
+            .get('/anything')
+            .expect(404);
+
+        await server.close();
+    });
+
+    it('should be possible to use log middleware with params', async () => {
+        const app = new Koa();
+        app.use(log.initKoa());
+        app.use(log.basicLogMiddleware({ fullLogMethods: ['PUT'] }));
+        const server = app.listen();
+
+        // not 500 means it did not fail
+        await supertest(server)
+            .get('/anything')
+            .expect(404);
+
+        await server.close();
+    });
 });

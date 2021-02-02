@@ -197,9 +197,9 @@ logger.module = (moduleName) => logger.child({ module: moduleName });
  */
 logger.initKoa = () => clsAdapter.getKoaMiddleware();
 
-logger.basicLogMiddleware = ({ fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'] }) => async (ctx, next) => {
+logger.basicLogMiddleware = ({ fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'] } = {}) => async (ctx, next) => {
     const startTime = new Date();
-    const fullLog = fullLogMethods.contains(ctx.method.toUpperCase());
+    const fullLog = fullLogMethods.includes(ctx.method.toUpperCase());
     let outResponse = {};
 
     if (fullLog) {
