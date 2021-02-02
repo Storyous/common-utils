@@ -176,7 +176,6 @@ if (transportEnabled('sentry')) {
 if (transportEnabled('loggly')) {
     const options = {
         stripColors: true, // because of bug - there is no message for native Errors without this flag
-        isBulk: true,
         ...logging.loggly
     };
     logger.add(new Loggly(options));
