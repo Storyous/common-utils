@@ -5,7 +5,7 @@ const {
     format,
     transports
 } = require('winston');
-require('winston-loggly-bulk');
+const { Loggly } = require('winston-loggly-bulk');
 const TransportStream = require('winston-transport');
 const Sentry = require('@sentry/node');
 const {
@@ -176,9 +176,10 @@ if (transportEnabled('sentry')) {
 if (transportEnabled('loggly')) {
     const options = {
         stripColors: true, // because of bug - there is no message for native Errors without this flag
+        isBulk: true,
         ...logging.loggly
     };
-    logger.add(new transports.Loggly(options));
+    logger.add(new Loggly(options));
 }
 
 /**
@@ -197,13 +198,19 @@ logger.module = (moduleName) => logger.child({ module: moduleName });
  */
 logger.initKoa = () => clsAdapter.getKoaMiddleware();
 
-logger.basicLogMiddleware = () => async (ctx, next) => {
+logger.basicLogMiddleware = ({ fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'] }) => async (ctx, next) => {
     const startTime = new Date();
-    // Better to log basic info right away, there can be some errors that will not log the things after await
-    logger.info('Incoming request', {
-        headersRequest: omit(ctx.headers, ['authorization', 'x-authorization', 'x-scopes']),
-        url: ctx.url
-    });
+    const fullLog = fullLogMethods.contains(ctx.method.toUpperCase());
+    let outResponse = {};
+
+    if (fullLog) {
+        // Better to log basic info right away, there can be some errors that will not log the things after await
+        logger.info('Incoming request', {
+            headersRequest: omit(ctx.headers, ['authorization', 'x-authorization', 'x-scopes']),
+            url: ctx.url,
+            method: ctx.method
+        });
+    }
 
     await next();
 
@@ -212,16 +219,30 @@ logger.basicLogMiddleware = () => async (ctx, next) => {
         // // These two values are in every single request and it is just polluting graphs and logs
         .filter((path) => path !== '*' && path !== '(.*)' && path !== '([^/]*)');
 
-    logger.info('Outgoing response', {
-        headerSent: ctx.response.headers,
+    outResponse = {
         status: ctx.status,
         // Loggly cannot split graphs based on number-based fields, this is recommended approach by them
         // **Facepalm**
         statusStr: `${ctx.status}`,
-        matched,
         duration: new Date() - startTime,
         lastMatched: matched[matched.length - 1]
-    });
+    };
+
+    if (fullLog) {
+        outResponse = {
+            ...outResponse,
+            matched,
+            headersSent: ctx.response.headers
+        };
+    } else {
+        outResponse = {
+            ...outResponse,
+            url: ctx.url,
+            method: ctx.method
+        };
+    }
+
+    logger.info('Outgoing response', outResponse);
 };
 
 /**
