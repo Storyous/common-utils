@@ -129,6 +129,10 @@ const transactionResult = await mongoLocker(`payment-transaction-${merchantId}`,
 ### 15.6.0
 Loggly network errors does not cause exit of all app anymore
 
+### 15.7.0
+`mongoLocker` support 'expireIn' (millis) option which can be used to customize default 2 minutes acquisition.
+The mongoLocker now also handles expired document waiting to be deleted by a MongoDB background job. 
+
 ## MongoCachedFetcher
 
 ### Usage:  
