@@ -80,7 +80,10 @@ const logger = createLogger({
 
             return updated;
         })()
-    )
+    ),
+    exceptionHandlers: [new transports.Console()],
+    // don't exit if the uncaught error is a loggly transport error
+    exitOnError: (err) => !`${err}`.includes('logs-01.loggly.com')
 })
     .child({ appName });
 

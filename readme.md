@@ -126,6 +126,9 @@ const transactionResult = await mongoLocker(`payment-transaction-${merchantId}`,
 });
 ```
 
+### 15.6.0
+Loggly network errors does not cause exit of all app anymore
+
 ## MongoCachedFetcher
 
 ### Usage:  
