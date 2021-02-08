@@ -12,16 +12,25 @@ export type LockCallback<T> = () => Promise<T>;
 export type LockerOptions = {
     noLaterThan?: number,
     startAttemptsDelay?: number
+    expireIn?: number
+};
+
+const _removeDeprecatedIndex = async (collection: Collection) => {
+    const collectionStats = await collection.stats();
+    if (collectionStats.indexDetails.acquiredAt_1) {
+        await collection.dropIndex('acquiredAt_1');
+    }
 };
 
 export default async (collection: Collection) => {
 
-    await collection.createIndex({ acquiredAt: 1 }, { expireAfterSeconds: 120 });
+    await _removeDeprecatedIndex(collection);
+    await collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
     return async <T>(
         key: LockKey,
         callback: LockCallback<T>,
-        { noLaterThan = 1000, startAttemptsDelay = 50 }: LockerOptions = {}
+        { noLaterThan = 1000, startAttemptsDelay = 50, expireIn = 120000 }: LockerOptions = {}
     ): Promise<T> => {
 
         const lockId = new ObjectId();
@@ -30,7 +39,20 @@ export default async (collection: Collection) => {
 
         const acquireLock = async () => {
             try {
-                await collection.insertOne({ _id: key, lockId, acquiredAt: new Date() });
+                const now = new Date();
+                /**
+                 * 3 possible situations
+                 * a) There is no lock -> upsert will create the document
+                 * b) There is an expired lock -> expiresAt: { $lte: now } will match and the document will be replaced
+                 * c) There is an unexpired lock -> expiresAt: { $lte: now } will not match,
+                 * database will try to insert the new one, but it will fail on duplicate key (_id) error
+                 */
+                await collection.replaceOne(
+                    { _id: key, expiresAt: { $lte: now } },
+                    // replaceOne will use the _id from filter parameter when inserting new document
+                    { lockId, expiresAt: new Date(now.getTime() + expireIn) },
+                    { upsert: true }
+                );
             } catch (err) {
                 if (mongoErrorCodes.DUPLICATE_KEY.includes(err.code)) {
                     throw AppError.concurrentRequest('The lock is already acquired.');
