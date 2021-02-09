@@ -131,6 +131,29 @@ describe('mongoLocker', () => {
                 });
             });
 
+            it('should be possible to override a lock which expired yet', async () => {
+
+                const expireIn = 500;
+                const array = [];
+                const key = 'AAA';
+
+                const firstCallPromise = locker(key, async () => {
+                    array.push(1);
+                    // the method last too long
+                    await new Promise((resolve) => setTimeout(resolve, 2 * expireIn));
+                    array.push(3);
+                }, { expireIn });
+
+                await new Promise((resolve) => setTimeout(resolve, expireIn));
+
+                const secondCallPromise = locker('AAA', async () => {
+                    array.push(2);
+                }, { expireIn });
+
+                await Promise.all([firstCallPromise, secondCallPromise]);
+                assert.deepStrictEqual(array, [1, 2, 3]);
+            });
+
         });
 
     });
@@ -149,21 +172,28 @@ describe('mongoLocker', () => {
             indexes = await collection.indexes();
             assert.deepStrictEqual(indexes.length, 2, 'No or wrong indexes has been created!');
             assert.deepStrictEqual(pick(indexes[1], 'key', 'expireAfterSeconds'), {
-                expireAfterSeconds: 120,
+                expireAfterSeconds: 0,
                 key: {
-                    acquiredAt: 1
+                    expiresAt: 1
                 }
             }, 'No or wrong indexes has been created!');
 
 
             const startedAt = new Date();
             const someKey = 'someKey';
+            const expireIn = 55000;
             await locker(someKey, async () => {
                 const document = await collection.findOne({});
                 assert.strictEqual(document._id, someKey);
-                assert(document.acquiredAt >= startedAt, 'The acquiredAt property has to be greater then startedAt');
-                assert(document.acquiredAt < new Date(), 'The acquiredAt property has to be younger then present');
-            });
+                assert(
+                    document.expiresAt >= new Date(startedAt.getTime() + expireIn),
+                    'The expiresAt property has to be greater then startedAt + expiresIn'
+                );
+                assert(
+                    document.expiresAt < new Date(Date.now() + expireIn),
+                    'The acquiredAt property has to be younger then present + expiresIn'
+                );
+            }, { expireIn });
 
         });
 
