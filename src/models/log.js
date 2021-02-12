@@ -199,59 +199,7 @@ logger.module = (moduleName) => logger.child({ module: moduleName });
  * Proxies the clsAdapter.getKoaMiddleware function to make the init process of
  * microservices easier without need of knowledge of clsAdapter and their function
  */
-logger.initKoa = () => clsAdapter.getKoaMiddleware();
 
-logger.basicLogMiddleware = ({ fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'] } = {}) => async (ctx, next) => {
-    const startTime = new Date();
-    const fullLog = fullLogMethods.includes(ctx.method.toUpperCase());
-    let outResponse = {};
-
-    if (fullLog) {
-        // Better to log basic info right away, there can be some errors that will not log the things after await
-        logger.info('Incoming request', {
-            headersRequest: omit(ctx.headers, ['authorization', 'x-authorization', 'x-scopes']),
-            url: ctx.url,
-            method: ctx.method
-        });
-    }
-
-    await next();
-
-    const matched = get(ctx, 'matched', [])
-        .map((match) => match.path)
-        // // These two values are in every single request and it is just polluting graphs and logs
-        .filter((path) => path !== '*' && path !== '(.*)' && path !== '([^/]*)');
-
-    outResponse = {
-        status: ctx.status,
-        // Loggly cannot split graphs based on number-based fields, this is recommended approach by them
-        // **Facepalm**
-        statusStr: `${ctx.status}`,
-        duration: new Date() - startTime,
-        lastMatched: matched[matched.length - 1]
-    };
-
-    if (fullLog) {
-        outResponse = {
-            ...outResponse,
-            matched,
-            headersSent: ctx.response.headers
-        };
-    } else {
-        outResponse = {
-            ...outResponse,
-            url: ctx.url,
-            method: ctx.method
-        };
-    }
-
-    logger.info('Outgoing response', outResponse);
-};
-
-/**
- * Returns current correlationId if it is specified by KoaMiddleware
- */
-logger.getCorrelationId = () => clsAdapter.getCorrelationId();
 
 /**
  * Wrapper for logger to allow special behaviour such as correlationId
@@ -283,6 +231,75 @@ class LoggerWrapper {
 
     child (...args) {
         return new LoggerWrapper(this.logger.child(...args));
+    }
+
+    getCorrelationId () {
+        return clsAdapter.getCorrelationId();
+    }
+
+    /**
+     * Usage
+     *     const app = new Koa();
+     *     app.use(log.initKoa());
+     *
+     * Proxies the clsAdapter.getKoaMiddleware function to make the init process of
+     * microservices easier without need of knowledge of clsAdapter and their function
+     */
+    initKoa () {
+        return clsAdapter.getKoaMiddleware();
+    }
+
+    basicLogMiddleware ({
+        fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
+        log = this.logger
+    } = {}) {
+        return async (ctx, next) => {
+            const startTime = new Date();
+            const fullLog = fullLogMethods.includes(ctx.method.toUpperCase());
+            let outResponse = {};
+
+            if (fullLog) {
+                // Better to log basic info right away,
+                // there can be some errors that will not log the things after await
+                log.info('Incoming request', {
+                    headersRequest: omit(ctx.headers, ['authorization', 'x-authorization', 'x-scopes']),
+                    url: ctx.url,
+                    method: ctx.method
+                });
+            }
+
+            await next();
+
+            const matched = get(ctx, 'matched', [])
+                .map((match) => match.path)
+                // // These two values are in every single request and it is just polluting graphs and logs
+                .filter((path) => path !== '*' && path !== '(.*)' && path !== '([^/]*)');
+
+            outResponse = {
+                status: ctx.status,
+                // Loggly cannot split graphs based on number-based fields, this is recommended approach by them
+                // **Facepalm**
+                statusStr: `${ctx.status}`,
+                duration: new Date() - startTime,
+                lastMatched: matched[matched.length - 1]
+            };
+
+            if (fullLog) {
+                outResponse = {
+                    ...outResponse,
+                    matched,
+                    headersSent: ctx.response.headers
+                };
+            } else {
+                outResponse = {
+                    ...outResponse,
+                    url: ctx.url,
+                    method: ctx.method
+                };
+            }
+
+            log.info('Outgoing response', outResponse);
+        };
     }
 
     /**
