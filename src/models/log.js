@@ -68,19 +68,7 @@ const logger = createLogger({
             return info;
         })(),
         // Redact any properties
-        format((info) => _findAndHidePassword(info))(),
-        format((info) => {
-            const updated = {
-                ...info,
-                correlationId: clsAdapter.getCorrelationId()
-            };
-
-            if (clsAdapter.getSessionId()) {
-                updated.sessionId = clsAdapter.getSessionId();
-            }
-
-            return updated;
-        })()
+        format((info) => _findAndHidePassword(info))()
     ),
     exceptionHandlers: [new transports.Console()],
     // don't exit if the uncaught error is a loggly transport error
@@ -192,16 +180,6 @@ if (transportEnabled('loggly')) {
 logger.module = (moduleName) => logger.child({ module: moduleName });
 
 /**
- * Usage
- *     const app = new Koa();
- *     app.use(log.initKoa());
- *
- * Proxies the clsAdapter.getKoaMiddleware function to make the init process of
- * microservices easier without need of knowledge of clsAdapter and their function
- */
-
-
-/**
  * Wrapper for logger to allow special behaviour such as correlationId
  */
 class LoggerWrapper {
@@ -227,6 +205,10 @@ class LoggerWrapper {
 
     error (...args) {
         this._log('error', ...args);
+    }
+
+    module (moduleName) {
+        return this.child({ module: moduleName });
     }
 
     child (...args) {
