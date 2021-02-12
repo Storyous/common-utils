@@ -12,7 +12,8 @@ const {
     clone,
     isError,
     get,
-    omit
+    omit,
+    isObject
 } = require('lodash');
 const appRoot = require('app-root-path');
 
@@ -252,5 +253,73 @@ logger.basicLogMiddleware = ({ fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE
  */
 logger.getCorrelationId = () => clsAdapter.getCorrelationId();
 
+/**
+ * Wrapper for logger to allow special behaviour such as correlationId
+ */
+class LoggerWrapper {
+    constructor (log) {
+        this.logger = log;
+    }
 
-module.exports = logger;
+    trace (...args) {
+        this._log('trace', ...args);
+    }
+
+    debug (...args) {
+        this._log('debug', ...args);
+    }
+
+    info (...args) {
+        this._log('info', ...args);
+    }
+
+    warn (...args) {
+        this._log('warn', ...args);
+    }
+
+    error (...args) {
+        this._log('error', ...args);
+    }
+
+    child (...args) {
+        return new LoggerWrapper(this.logger.child(...args));
+    }
+
+    /**
+     * Log line with new method
+     * @param {string} method
+     * @param args[]
+     * @private
+     */
+    _log (method, args = []) {
+        const thisArgs = [...args];
+        if (isObject(thisArgs[0])) {
+            thisArgs[0] = this._setCorrelationSessionId(args[0]);
+        }
+        if (isObject(args[1])) {
+            thisArgs[1] = this._setCorrelationSessionId(args[1]);
+        }
+        this.logger[method](...args);
+    }
+
+    /**
+     * Add correlation and sessionId
+     * @param {Object} obj
+     * @returns {Object} obj with correlationId and sessionId
+     */
+    _setCorrelationSessionId (obj) {
+        const thisObj = {
+            ...obj,
+            correlationId: clsAdapter.getCorrelationId()
+        };
+
+        if (clsAdapter.getSessionId()) {
+            obj.sessionId = clsAdapter.getSessionId();
+        }
+        return thisObj;
+    }
+}
+
+const _loggerWrapper = new LoggerWrapper(logger);
+
+module.exports = _loggerWrapper;
