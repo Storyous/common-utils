@@ -193,23 +193,23 @@ class LoggerWrapper {
     }
 
     trace (...args: any[]) {
-        this._log('trace', ...args);
+        this._log('trace', args);
     }
 
     debug (...args: any[]) {
-        this._log('debug', ...args);
+        this._log('debug', args);
     }
 
     info (...args: any[]) {
-        this._log('info', ...args);
+        this._log('info', args);
     }
 
     warn (...args: any[]) {
-        this._log('warn', ...args);
+        this._log('warn', args);
     }
 
     error (...args: any[]) {
-        this._log('error', ...args);
+        this._log('error', args);
     }
 
     module (moduleName: string): LoggerWrapper {
@@ -291,13 +291,23 @@ class LoggerWrapper {
         };
     }
 
+    add(...args: any[]) {
+        // @ts-ignore
+        return this.logger.add(...args);
+    }
+
+    remove (...args: any[]) {
+        // @ts-ignore
+        return this.logger.remove(...args);
+    }
+
     /**
      * Log line with new method
      * @param {string} method
      * @param args[]
      * @private
      */
-    _log (method: string, args = []) {
+    _log (method: string, args: any = []) {
         const thisArgs: any[] = [...args];
         if (isObject(thisArgs[0])) {
             thisArgs[0] = this._setCorrelationSessionId(args[0]);
@@ -306,7 +316,7 @@ class LoggerWrapper {
             thisArgs[1] = this._setCorrelationSessionId(args[1]);
         }
         // @ts-ignore
-        this.logger[method](...args);
+        this.logger[method](...thisArgs);
     }
 
     /**
@@ -321,12 +331,14 @@ class LoggerWrapper {
         };
 
         if (clsAdapter.getSessionId()) {
-            obj.sessionId = clsAdapter.getSessionId();
+            thisObj.sessionId = clsAdapter.getSessionId();
         }
         return thisObj;
     }
 }
 
 const _loggerWrapper = new LoggerWrapper(logger);
+
+module.exports = _loggerWrapper;
 
 export default _loggerWrapper;
