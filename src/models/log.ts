@@ -292,7 +292,7 @@ class LoggerWrapper {
         };
     }
 
-    debugLogging(debug = true, ignoreUrls = ['/status']) {
+    debugLogging(debug = false, ignoreUrls = ['/status']) {
         return async (ctx: any, next: Function) => {
             if (!debug || ignoreUrls.includes(ctx.url)) {
                 return next();
