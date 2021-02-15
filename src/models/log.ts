@@ -1,5 +1,7 @@
 'use strict';
 
+import {Logger} from "winston";
+
 const {
     createLogger,
     format,
@@ -23,7 +25,7 @@ const {
 } = require('../config');
 const clsAdapter = require('./clsAdapter');
 
-const transportEnabled = (name) => logging[name] && !logging[name].silent;
+const transportEnabled = (name: string) => logging[name] && !logging[name].silent;
 
 let appName = 'nonresolved';
 
@@ -36,7 +38,7 @@ try {
     console.error(err, 'Unable to resolve the name of app for logs');
 }
 
-function _findAndHidePassword (arg) {
+function _findAndHidePassword (arg: { body: { password: any; currentPassword: any; }; }) {
 
     if (arg && arg.body && (arg.body.password || arg.body.currentPassword)) {
         const clonedArg = clone(arg);
@@ -58,7 +60,7 @@ function _findAndHidePassword (arg) {
 
 const logger = createLogger({
     format: format.combine(
-        format((info) => {
+        format((info: { stack: any; }) => {
             if (isError(info)) {
                 return {
                     ...info,
@@ -68,11 +70,11 @@ const logger = createLogger({
             return info;
         })(),
         // Redact any properties
-        format((info) => _findAndHidePassword(info))()
+        format((info: any) => _findAndHidePassword(info))()
     ),
     exceptionHandlers: [new transports.Console()],
     // don't exit if the uncaught error is a loggly transport error
-    exitOnError: (err) => !`${err}`.includes('logs-01.loggly.com')
+    exitOnError: (err: any) => !`${err}`.includes('logs-01.loggly.com')
 })
     .child({ appName });
 
@@ -87,7 +89,7 @@ if (transportEnabled('console')) {
     // Use for localhost development only, it will output nicely readable logs
     // and if error appears the stack will be clickable in webstorm
     if (get(logging, 'console.prettyOutput')) {
-        const logStackAndOmitIt = format((info) => {
+        const logStackAndOmitIt = format((info: { stack: any; }) => {
             if (info.stack) {
                 // eslint-disable-next-line no-console
                 console.error(info.stack);
@@ -130,9 +132,10 @@ if (transportEnabled('sentry')) {
         level: config.level,
         silent: config.silent
     }), {
-        log (info, callback) {
-            Sentry.withScope((scope) => {
+        log (info: any, callback: Function) {
+            Sentry.withScope((scope: any) => {
                 scope.setFingerprint(['{{ default }}', info.message]);
+                // @ts-ignore
                 scope.setLevel(levelMap[info.level]);
 
                 if (info.module) {
@@ -177,45 +180,48 @@ if (transportEnabled('loggly')) {
  * @param {string} moduleName
  * @returns {winston.Logger}
  */
-logger.module = (moduleName) => logger.child({ module: moduleName });
+logger.module = (moduleName: string) => logger.child({ module: moduleName });
 
 /**
  * Wrapper for logger to allow special behaviour such as correlationId
  */
 class LoggerWrapper {
-    constructor (log) {
+    private readonly logger: Logger;
+
+    constructor (log: Logger) {
         this.logger = log;
     }
 
-    trace (...args) {
+    trace (...args: any[]) {
         this._log('trace', ...args);
     }
 
-    debug (...args) {
+    debug (...args: any[]) {
         this._log('debug', ...args);
     }
 
-    info (...args) {
+    info (...args: any[]) {
         this._log('info', ...args);
     }
 
-    warn (...args) {
+    warn (...args: any[]) {
         this._log('warn', ...args);
     }
 
-    error (...args) {
+    error (...args: any[]) {
         this._log('error', ...args);
     }
 
-    module (moduleName) {
+    module (moduleName: string): LoggerWrapper {
         return this.child({ module: moduleName });
     }
 
-    child (...args) {
+    child (...args: { module: string; }[]): LoggerWrapper {
+        // @ts-ignore
         return new LoggerWrapper(this.logger.child(...args));
     }
 
-    getCorrelationId () {
+    getCorrelationId (): string {
         return clsAdapter.getCorrelationId();
     }
 
@@ -227,7 +233,7 @@ class LoggerWrapper {
      * Proxies the clsAdapter.getKoaMiddleware function to make the init process of
      * microservices easier without need of knowledge of clsAdapter and their function
      */
-    initKoa () {
+    initKoa (): Function {
         return clsAdapter.getKoaMiddleware();
     }
 
@@ -235,7 +241,7 @@ class LoggerWrapper {
         fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
         log = this.logger
     } = {}) {
-        return async (ctx, next) => {
+        return async (ctx: any, next: Function) => {
             const startTime = new Date();
             const fullLog = fullLogMethods.includes(ctx.method.toUpperCase());
             let outResponse = {};
@@ -253,15 +259,16 @@ class LoggerWrapper {
             await next();
 
             const matched = get(ctx, 'matched', [])
-                .map((match) => match.path)
+                .map((match: { path: any; }) => match.path)
                 // // These two values are in every single request and it is just polluting graphs and logs
-                .filter((path) => path !== '*' && path !== '(.*)' && path !== '([^/]*)');
+                .filter((path: string) => path !== '*' && path !== '(.*)' && path !== '([^/]*)');
 
             outResponse = {
                 status: ctx.status,
                 // Loggly cannot split graphs based on number-based fields, this is recommended approach by them
                 // **Facepalm**
                 statusStr: `${ctx.status}`,
+                // @ts-ignore
                 duration: new Date() - startTime,
                 lastMatched: matched[matched.length - 1]
             };
@@ -290,14 +297,15 @@ class LoggerWrapper {
      * @param args[]
      * @private
      */
-    _log (method, args = []) {
-        const thisArgs = [...args];
+    _log (method: string, args = []) {
+        const thisArgs: any[] = [...args];
         if (isObject(thisArgs[0])) {
             thisArgs[0] = this._setCorrelationSessionId(args[0]);
         }
         if (isObject(args[1])) {
             thisArgs[1] = this._setCorrelationSessionId(args[1]);
         }
+        // @ts-ignore
         this.logger[method](...args);
     }
 
@@ -306,7 +314,7 @@ class LoggerWrapper {
      * @param {Object} obj
      * @returns {Object} obj with correlationId and sessionId
      */
-    _setCorrelationSessionId (obj) {
+    _setCorrelationSessionId (obj: any) : any {
         const thisObj = {
             ...obj,
             correlationId: clsAdapter.getCorrelationId()
@@ -321,4 +329,4 @@ class LoggerWrapper {
 
 const _loggerWrapper = new LoggerWrapper(logger);
 
-module.exports = _loggerWrapper;
+export default _loggerWrapper;
