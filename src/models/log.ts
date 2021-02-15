@@ -1,13 +1,14 @@
 'use strict';
 
 import {Logger} from "winston";
+import { Context } from "koa";
 
 const {
     createLogger,
     format,
     transports
 } = require('winston');
-const { Loggly } = require('winston-loggly-bulk');
+const {Loggly} = require('winston-loggly-bulk');
 const TransportStream = require('winston-transport');
 const Sentry = require('@sentry/node');
 const {
@@ -15,7 +16,8 @@ const {
     isError,
     get,
     omit,
-    isObject
+    isObject,
+    isEmpty
 } = require('lodash');
 const appRoot = require('app-root-path');
 
@@ -38,7 +40,7 @@ try {
     console.error(err, 'Unable to resolve the name of app for logs');
 }
 
-function _findAndHidePassword (arg: { body: { password: any; currentPassword: any; }; }) {
+function _findAndHidePassword(arg: { body: { password: any; currentPassword: any; }; }) {
 
     if (arg && arg.body && (arg.body.password || arg.body.currentPassword)) {
         const clonedArg = clone(arg);
@@ -76,7 +78,7 @@ const logger = createLogger({
     // don't exit if the uncaught error is a loggly transport error
     exitOnError: (err: any) => !`${err}`.includes('logs-01.loggly.com')
 })
-    .child({ appName });
+    .child({appName});
 
 if (transportEnabled('console')) {
     let options = {
@@ -112,7 +114,7 @@ if (transportEnabled('console')) {
 
 if (transportEnabled('sentry')) {
 
-    const { sentry: config } = logging;
+    const {sentry: config} = logging;
 
     Sentry.init({
         dsn: config.dsn,
@@ -132,7 +134,7 @@ if (transportEnabled('sentry')) {
         level: config.level,
         silent: config.silent
     }), {
-        log (info: any, callback: Function) {
+        log(info: any, callback: Function) {
             Sentry.withScope((scope: any) => {
                 scope.setFingerprint(['{{ default }}', info.message]);
                 // @ts-ignore
@@ -180,7 +182,7 @@ if (transportEnabled('loggly')) {
  * @param {string} moduleName
  * @returns {winston.Logger}
  */
-logger.module = (moduleName: string) => logger.child({ module: moduleName });
+logger.module = (moduleName: string) => logger.child({module: moduleName});
 
 /**
  * Wrapper for logger to allow special behaviour such as correlationId
@@ -188,40 +190,40 @@ logger.module = (moduleName: string) => logger.child({ module: moduleName });
 class LoggerWrapper {
     private readonly logger: Logger;
 
-    constructor (log: Logger) {
+    constructor(log: Logger) {
         this.logger = log;
     }
 
-    trace (...args: any[]) {
+    trace(...args: any[]) {
         this._log('trace', args);
     }
 
-    debug (...args: any[]) {
+    debug(...args: any[]) {
         this._log('debug', args);
     }
 
-    info (...args: any[]) {
+    info(...args: any[]) {
         this._log('info', args);
     }
 
-    warn (...args: any[]) {
+    warn(...args: any[]) {
         this._log('warn', args);
     }
 
-    error (...args: any[]) {
+    error(...args: any[]) {
         this._log('error', args);
     }
 
-    module (moduleName: string): LoggerWrapper {
-        return this.child({ module: moduleName });
+    module(moduleName: string): LoggerWrapper {
+        return this.child({module: moduleName});
     }
 
-    child (...args: { module: string; }[]): LoggerWrapper {
+    child(...args: { module: string; }[]): LoggerWrapper {
         // @ts-ignore
         return new LoggerWrapper(this.logger.child(...args));
     }
 
-    getCorrelationId (): string {
+    getCorrelationId(): string {
         return clsAdapter.getCorrelationId();
     }
 
@@ -233,15 +235,15 @@ class LoggerWrapper {
      * Proxies the clsAdapter.getKoaMiddleware function to make the init process of
      * microservices easier without need of knowledge of clsAdapter and their function
      */
-    initKoa (): Function {
+    initKoa(): Function {
         return clsAdapter.getKoaMiddleware();
     }
 
-    basicLogMiddleware ({
-        fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
-        log = this.logger
-    } = {}) {
-        return async (ctx: any, next: Function) => {
+    basicLogMiddleware({
+                           fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
+                           log = this.logger
+                       } = {}) {
+        return async (ctx: Context, next: Function) => {
             const startTime = new Date();
             const fullLog = fullLogMethods.includes(ctx.method.toUpperCase());
             let outResponse = {};
@@ -291,12 +293,31 @@ class LoggerWrapper {
         };
     }
 
+    debugLogging(debug = false, ignoreUrls = ['/status']) {
+        return async (ctx: Context, next: Function) => {
+            if (!debug || ignoreUrls.includes(ctx.url)) {
+                return next();
+            }
+
+            const requestBody = get(ctx, 'request.body');
+            if (!isEmpty(get(ctx, 'request.body'))) {
+                this.logger.info('Request body', {requestBody: JSON.stringify(requestBody)});
+            }
+            await next();
+            if (!isEmpty(ctx.body)) {
+                this.logger.info('Response body', {responseBody: JSON.stringify(ctx.body)});
+            }
+
+            return null;
+        }
+    }
+
     add(...args: any[]) {
         // @ts-ignore
         return this.logger.add(...args);
     }
 
-    remove (...args: any[]) {
+    remove(...args: any[]) {
         // @ts-ignore
         return this.logger.remove(...args);
     }
@@ -307,7 +328,7 @@ class LoggerWrapper {
      * @param args[]
      * @private
      */
-    _log (method: string, args: any = []) {
+    _log(method: string, args: any = []) {
         const thisArgs: any[] = [...args];
         if (isObject(thisArgs[0])) {
             thisArgs[0] = this._setCorrelationSessionId(args[0]);
@@ -324,7 +345,7 @@ class LoggerWrapper {
      * @param {Object} obj
      * @returns {Object} obj with correlationId and sessionId
      */
-    _setCorrelationSessionId (obj: any) : any {
+    _setCorrelationSessionId(obj: any): any {
         const thisObj = {
             ...obj,
             correlationId: clsAdapter.getCorrelationId()
