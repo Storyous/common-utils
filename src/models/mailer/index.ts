@@ -51,7 +51,7 @@ const mailer = {
      * @param {MailSenderOptions} defaultMailOptions
      * @returns {MailSender}
      */
-    createSender (defaultMailOptions) {
+    createSender (defaultMailOptions: { from: any; }) {
 
         defaultMailOptions.from = config.mailer.transporter.auth.user;
 
@@ -63,9 +63,10 @@ const mailer = {
      * @param {MailOptions} mailOptions
      * @returns {Promise.<SentMailInfo>}
      */
-    sendMail (mailOptions) {
+    sendMail (mailOptions: any) {
         return new Promise((resolve, reject) => {
-            this._transporter.sendMail(mailOptions, (err, info) => {
+            // @ts-ignore
+            this._transporter.sendMail(mailOptions, (err: any, info: unknown) => {
                 if (err) {
                     reject(err);
                 } else {
@@ -82,11 +83,11 @@ const mailer = {
      * @param {SentMailInfo} resultInfo
      * @private
      */
-    _logSentMail (mailOptions, resultInfo) {
+    _logSentMail (mailOptions: { subject: any; to: string; }, resultInfo: any) {
 
         const extractEmail = this._extractEmail.bind(this);
 
-        const logMetaInfo = {
+        const logMetaInfo: any = {
             subject: mailOptions.subject,
             to: mailOptions.to.split(',').map(extractEmail)
         };
@@ -107,7 +108,7 @@ const mailer = {
     },
 
 
-    _extractEmail (emailText) {
+    _extractEmail (emailText: string) {
         const result = emailText.match(this._emailAddressRegexp);
         return result ? result[0] : '';
     }
@@ -115,3 +116,4 @@ const mailer = {
 };
 
 module.exports = mailer;
+export default mailer;

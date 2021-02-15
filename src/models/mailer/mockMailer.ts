@@ -15,7 +15,7 @@ module.exports = {
 
     _mockTransporter: null,
 
-    useForBlock (mocha) {
+    useForBlock (mocha: { beforeEach: (arg0: () => void) => void; afterEach: (arg0: () => void) => void; }) {
 
         mocha.beforeEach(() => {
             this._originalTransporter = mailer._transporter;

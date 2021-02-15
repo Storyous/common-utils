@@ -2,9 +2,9 @@
 
 const { pick, isEmpty } = require('lodash');
 const AppError = require('./appError');
-const log = require('./models/log').module('API');
+const log = require('./models/log');
 
-module.exports = async function (ctx, next) {
+const errHandler = async function (ctx: any, next: Function) {
 
     try {
 
@@ -12,11 +12,12 @@ module.exports = async function (ctx, next) {
 
     } catch (originalError) {
 
-        let err = originalError;
+        let err: any = originalError;
 
         if (!(err instanceof AppError)) {
 
             if (err instanceof Error) {
+                // @ts-ignore
                 const redirect = err.redirect || null;
                 err = new AppError(`${err.name}: ${err.message}`);
                 err.redirect = redirect;
@@ -31,7 +32,7 @@ module.exports = async function (ctx, next) {
             err.stack = originalError.stack;
         }
 
-        const metaData = {
+        const metaData: any = {
             httpStatus: err.httpStatus || 500,
             url: ctx.request.originalUrl,
             query: ctx.request.query,
@@ -82,3 +83,6 @@ module.exports = async function (ctx, next) {
     }
 
 };
+
+module.exports = errHandler;
+export default errHandler;

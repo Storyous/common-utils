@@ -5,6 +5,8 @@
 
 'use strict';
 
+import {LoDashStatic} from "lodash";
+
 /**
  * @typedef {{
  *      htmlTemplatePath?: string,
@@ -15,7 +17,7 @@
 
 
 const handlebars = require('handlebars');
-const _ = require('lodash');
+const _: LoDashStatic = require('lodash');
 const config = require('../../config');
 const AppError = require('../../appError');
 
@@ -26,14 +28,18 @@ const AppError = require('../../appError');
  * @param {MailSenderOptions} options
  */
 
-function MailSender (options, sendFunction) {
+function MailSender (options: { to: any; from: any; template: any; }, sendFunction: any) {
 
+    // @ts-ignore
     this._sendFunction = sendFunction;
 
+    // @ts-ignore
     this._sendTo = options.to;
 
+    // @ts-ignore
     this._sendFrom = options.from;
 
+    // @ts-ignore
     this._tempate = options.template;
 }
 
@@ -54,7 +60,7 @@ MailSender.prototype = {
     _sendFrom: null,
 
 
-    _getTemplate (params) {
+    _getTemplate (params: { template: any; }) {
 
         const compiledTemplate = handlebars.compile(params.template)(params);
 
@@ -67,7 +73,7 @@ MailSender.prototype = {
             throw AppError.internal('The template is not valid.');
         }
 
-        const template = {};
+        const template: any = {};
         for (let i = 0; i < templatePieces.length; i += 2) {
             template[templatePieces[i]] = templatePieces[i + 1];
         }
@@ -79,7 +85,7 @@ MailSender.prototype = {
         return template;
     },
 
-    _getLanguageFromParams (params) {
+    _getLanguageFromParams (params: { lang: any; person: { lang: any; }; }) {
 
         if (params.lang) {
             return params.lang;
@@ -92,7 +98,7 @@ MailSender.prototype = {
         return config.defaultLanguage;
     },
 
-    _completeParams (params) {
+    _completeParams (params: { to: any; from: any; template: any; }) {
         return _.extend({}, params, {
             lang: this._getLanguageFromParams(params),
             to: params.to || this._sendTo,
@@ -113,7 +119,7 @@ MailSender.prototype = {
      * @returns {Promise.<SentMailInfo>}
      *
      */
-    async send (params) {
+    async send (params: { to: any; replyTo: any; bcc: any; cc: any; }) {
 
         params = this._completeParams(params);
 
@@ -153,3 +159,4 @@ MailSender.prototype = {
 
 
 module.exports = MailSender;
+export default MailSender;
