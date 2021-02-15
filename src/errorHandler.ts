@@ -3,8 +3,6 @@
 const { pick, isEmpty } = require('lodash');
 const AppError = require('./appError');
 const log = require('./models/log');
-console.log(log);
-log.module('API');
 
 const errHandler = async function (ctx: any, next: Function) {
 
