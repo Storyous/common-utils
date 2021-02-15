@@ -1,6 +1,7 @@
 'use strict';
 
 import {Logger} from "winston";
+import { Context } from "koa";
 
 const {
     createLogger,
@@ -242,7 +243,7 @@ class LoggerWrapper {
                            fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
                            log = this.logger
                        } = {}) {
-        return async (ctx: any, next: Function) => {
+        return async (ctx: Context, next: Function) => {
             const startTime = new Date();
             const fullLog = fullLogMethods.includes(ctx.method.toUpperCase());
             let outResponse = {};
@@ -293,13 +294,14 @@ class LoggerWrapper {
     }
 
     debugLogging(debug = false, ignoreUrls = ['/status']) {
-        return async (ctx: any, next: Function) => {
+        return async (ctx: Context, next: Function) => {
             if (!debug || ignoreUrls.includes(ctx.url)) {
                 return next();
             }
 
-            if (!isEmpty(ctx.request.body)) {
-                this.logger.info('Request body', {requestBody: JSON.stringify(ctx.request.body)});
+            const requestBody = get(ctx, 'request.body');
+            if (!isEmpty(get(ctx, 'request.body'))) {
+                this.logger.info('Request body', {requestBody: JSON.stringify(requestBody)});
             }
             await next();
             if (!isEmpty(ctx.body)) {
