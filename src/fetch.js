@@ -3,10 +3,18 @@
 const nodeFetch = require('node-fetch');
 const {
     omitBy,
-    isUndefined
+    isUndefined,
+    mapValues,
+    omit,
+    isString
 } = require('lodash');
 const AppError = require('./appError');
 const clsAdapter = require('./models/clsAdapter');
+const log = require('./models/log');
+
+const safeHeadersExpressions = [
+
+];
 
 const omitUndefined = (object) => omitBy(object, isUndefined);
 
@@ -38,11 +46,26 @@ const errorWith = (error, originalStack, url, options, response, responseText) =
     return err;
 };
 
+function logOutgoingRequest (url, options) {
+    const optionsToLog = omit(options, ['log', 'parseResponseAs', 'expectOk']);
+    if (optionsToLog.headers) {
+        optionsToLog.headers = mapValues(optionsToLog.headers, (value, key) => {
+            if (/^(x-)?authorization$/i.test(key) && isString(value)) {
+                const [credentials, type = ''] = value.split(' ').reverse();
+
+            }
+            return value;
+        });
+    }
+    log.info('Outgoing request', { url, ...optionsToLog });
+}
+
 /**
  * @param {string} url
  * @param {{
  *     expectOk?: boolean
  *     parseResponseAs?: 'json'|'text'
+ *     log?: boolean
  * }} [options] - extended Fetch options
  * @returns {Promise.<nodeFetch.Response|string|*>}
  *
@@ -72,10 +95,15 @@ async function fetch (url, options = {}) {
 
     let response;
 
+    if (options.log) {
+        logOutgoingRequest(url, options);
+    }
+
     try {
         response = await nodeFetch(url, fetchOptions);
 
     } catch (error) {
+        log.error('Outgoing request failed', { url, ...error });
         throw errorWith(error, originalStack, url, options);
     }
 
