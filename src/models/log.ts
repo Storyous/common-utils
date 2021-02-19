@@ -2,6 +2,7 @@
 
 import {Logger} from "winston";
 import { Context } from "koa";
+import { MESSAGE } from 'triple-beam'; // dependency of winston
 
 const {
     createLogger,
@@ -62,6 +63,7 @@ function _findAndHidePassword(arg: { body: { password: any; currentPassword: any
 
 const logger = createLogger({
     format: format.combine(
+
         format((info: { stack: any; }) => {
             if (isError(info)) {
                 return {
@@ -71,8 +73,18 @@ const logger = createLogger({
             }
             return info;
         })(),
+
         // Redact any properties
-        format((info: any) => _findAndHidePassword(info))()
+        format((info: any) => _findAndHidePassword(info))(),
+
+        // Some uncaught exceptions are not logged right way when the MESSAGE symbol is not defined
+        // the symbol is properly defined only if there is no formatters in the winston instance
+        format((info: any) => {
+            if (info.message) {
+                info[MESSAGE] = info.message;
+            }
+            return info;
+        })()
     ),
     exceptionHandlers: [new transports.Console()],
     // don't exit if the uncaught error is a loggly transport error
