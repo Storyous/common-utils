@@ -252,8 +252,7 @@ class LoggerWrapper {
     }
 
     basicLogMiddleware({
-                           fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
-                           log = this.logger
+                           fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
                        } = {}) {
         return async (ctx: Context, next: Function) => {
             const startTime = new Date();
@@ -263,7 +262,7 @@ class LoggerWrapper {
             if (fullLog) {
                 // Better to log basic info right away,
                 // there can be some errors that will not log the things after await
-                log.info('Incoming request', {
+                this.info('Incoming request', {
                     headersRequest: omit(ctx.headers, ['authorization', 'x-authorization', 'x-scopes']),
                     url: ctx.url,
                     method: ctx.method
@@ -301,7 +300,7 @@ class LoggerWrapper {
                 };
             }
 
-            log.info('Outgoing response', outResponse);
+            this.info('Outgoing response', outResponse);
         };
     }
 
@@ -313,11 +312,11 @@ class LoggerWrapper {
 
             const requestBody = get(ctx, 'request.body');
             if (!isEmpty(get(ctx, 'request.body'))) {
-                this.logger.info('Request body', {requestBody: JSON.stringify(requestBody)});
+                this.info('Request body', {requestBody: JSON.stringify(requestBody)});
             }
             await next();
             if (!isEmpty(ctx.body)) {
-                this.logger.info('Response body', {responseBody: JSON.stringify(ctx.body)});
+                this.info('Response body', {responseBody: JSON.stringify(ctx.body)});
             }
 
             return null;
