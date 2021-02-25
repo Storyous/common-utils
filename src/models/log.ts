@@ -365,6 +365,11 @@ class LoggerWrapper {
         if (clsAdapter.getSessionId()) {
             thisObj.sessionId = clsAdapter.getSessionId();
         }
+
+        if (obj.stack) {
+            thisObj.stack = obj.stack;
+        }
+
         return thisObj;
     }
 }
