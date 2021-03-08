@@ -35,7 +35,7 @@ class Secrets {
             dec += decipher.final('utf8');
             return dec;
         } catch (error) {
-            throw new AppError('Error when decrypting integration credentials.', error);
+            throw new AppError('Error when decrypting text.', error);
         }
     }
 
