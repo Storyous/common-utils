@@ -22,7 +22,7 @@ describe('secrets', () => {
             return dec;
         }
 
-        const encryptedChallenge = secrets.encrypt(challenge);
+        const encryptedChallenge = secrets.encryptLegacy(challenge);
 
         assert.equal(
             decrypt(encryptedChallenge),
@@ -36,4 +36,29 @@ describe('secrets', () => {
             'encryptedChallenge should possible to decrypt by secrets.decrypt'
         );
     });
+
+    it('should be able to encrypt and decrypt a secret', () => {
+
+        const password = 'lbwyBzfgzUIvXZFShJuikaWvLJhIVq36';
+        const plainText = 'someChallengeTextAaa';
+
+        const secrets = new Secrets(password);
+
+        const encryptedLegacy = secrets.encryptLegacy(plainText);
+        const encrypted = secrets.encrypt(plainText);
+
+        assert.strictEqual(secrets.decrypt(encryptedLegacy), plainText);
+        assert.strictEqual(secrets.decrypt(encrypted), plainText);
+    });
+
+    it('should be compatible with PHP-generated secret', () => {
+        const plainText = 'someChallengeTextAaa';
+        const password = 'lbwyBzfgzUIvXZFShJuikaWvLJhIVq36';
+        // eslint-disable-next-line max-len
+        const encryptedByPHP = 'd9e52a175185520acf09e341288d8ebf_75d1cfe5600d4277c3ab6f1a628893ffb4b3c815c45f50758c6106121802adf9';
+
+        const secrets = new Secrets(password);
+        assert.strictEqual(secrets.decrypt(encryptedByPHP), plainText);
+    });
+
 });

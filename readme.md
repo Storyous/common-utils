@@ -132,6 +132,9 @@ Loggly network errors does not cause exit of all app anymore
 `mongoLocker` support 'expireIn' (millis) option which can be used to customize default 2 minutes acquisition.
 The mongoLocker now also handles expired document waiting to be deleted by a MongoDB background job.
 
+### 16.0.0
+`Secrets` now encrypt strings differently. Use `encryptLegacy()` function to achieve old behaviour. `decrypt()` function is compatible with legacy secrets automatically.
+`encrypt()` method now generates secrets compatible with implementation on Admin (PHP), and the updated `decrypt()` function.
 
 ## MongoCachedFetcher
 
