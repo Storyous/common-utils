@@ -341,11 +341,17 @@ class LoggerWrapper {
      */
     _log(method: string, args: any = []) {
         const thisArgs: any[] = [...args];
-        if (isObject(thisArgs[0])) {
-            thisArgs[0] = this._setCorrelationSessionId(args[0]);
+
+        // If someone logs just string message log.info('some message')
+        // add empty object as second parameter and fill it with correlationId
+        if (thisArgs.length === 1 && !isObject(thisArgs[0])) {
+            thisArgs.push({});
         }
-        if (isObject(args[1])) {
-            thisArgs[1] = this._setCorrelationSessionId(args[1]);
+
+        if (isObject(thisArgs[0])) {
+            thisArgs[0] = this._setCorrelationSessionId(thisArgs[0]);
+        } else if (isObject(thisArgs[1])) {
+            thisArgs[1] = this._setCorrelationSessionId(thisArgs[1]);
         }
         // @ts-ignore
         this.logger[method](...thisArgs);
