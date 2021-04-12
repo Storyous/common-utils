@@ -68,12 +68,8 @@ class ContextFactory {
     //     };
     // }
 
-    static setLogger(logger) {
-        this.setOnContext('logger', logger);
-    }
-
-    static getLogger() {
-        return this.getContextStorage().logger;
+    static setAdditionalLogFields(obj) {
+        Object.keys(obj).forEach(key => this.setOnContext(key, obj[key]));
     }
 
     static run (callback) {
