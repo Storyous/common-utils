@@ -233,12 +233,15 @@ class LoggerWrapper {
 
     child(...args: { module: string; }[]): LoggerWrapper {
         // @ts-ignore
-        const newLogger = new LoggerWrapper(this.logger.child(...args));
-        newLogger.isChild = true;
+        return new LoggerWrapper(this.logger.child(...args));
     }
 
     getCorrelationId(): string {
         return clsAdapter.getCorrelationId();
+    }
+
+    getSessionId(): string {
+        return clsAdapter.getSessionId();
     }
 
     /**
@@ -342,57 +345,75 @@ class LoggerWrapper {
      * @private
      */
     _log(method: string, args: any = []) {
-        let logger = this._getLoggerWithCorrelationId();
         let thisArgs: any[] = [...args];
 
+        if (thisArgs.length === 1 && !isObject(thisArgs[0])) {
+            thisArgs.push({});
+        }
+
         thisArgs = thisArgs.map(arg => {
-            if (isObject(arg) && arg.stack) {
-                return {
-                    ...this._extendWithStackInSubObjects(arg),
-                    stack: arg.stack,
-                }
+            if (isObject(arg)) {
+                return this._setAdditionalFieldsId(arg);
             }
             return arg;
         });
 
         // @ts-ignore
-        logger[method](...thisArgs);
+        this.logger[method](...thisArgs);
     }
 
-    _extendWithStackInSubObjects(arg: any) {
-        return Object.keys(arg).map(key => {
-            const subObj = arg[key];
+    /**
+     * @param {Function} promiseFactory Function that creates promise you want to use bind for
+     */
+    async addIdsToProcess(promiseFactory: Function) {
+        return clsAdapter.bindToPromiseFactory(promiseFactory);
+    }
+
+    /**
+     * To add extra fields to all logs in given context
+     * @param {Object} obj
+     */
+    setAdditionalFieldsForContext(obj: any) {
+        clsAdapter.setAdditionalLogFields(obj);
+    }
+
+    /**
+     * Add correlation, sessionId and additional properties to logs
+     * @param {Object} obj
+     * @returns {Object} obj with correlationId and sessionId
+     */
+    _setAdditionalFieldsId(obj: any): any {
+        const thisObj: any = {
+            ...this._extendWithStackInSubObjects(obj),
+            correlationId: clsAdapter.getCorrelationId(),
+            ...clsAdapter.getAdditionalLogFields()
+        };
+
+        if (clsAdapter.getSessionId()) {
+            thisObj.sessionId = clsAdapter.getSessionId();
+        }
+
+        if (obj.stack) {
+            thisObj.stack = obj.stack;
+        }
+
+        return thisObj;
+    }
+
+    // If error is subobject make sure it load the stack
+    _extendWithStackInSubObjects(obj: any) {
+        const _obj = {...obj};
+        Object.keys(_obj).forEach(key => {
+            const subObj = _obj[key];
             if (isObject(subObj) && subObj.stack) {
-                return {
+                _obj[key] = {
                     ...subObj,
                     stack: subObj.stack,
                 }
             }
-            return subObj;
         });
-    }
 
-    /**
-     * Add correlation and sessionId
-     * @returns {Object} obj with correlationId and sessionId
-     */
-    _getLoggerWithCorrelationId(): any {
-        let logger: LoggerWrapper = clsAdapter.getLogger();
-
-        if (!logger) {
-            const thisObj: any = {
-                correlationId: clsAdapter.getCorrelationId()
-            };
-
-            if (clsAdapter.getSessionId()) {
-                thisObj.sessionId = clsAdapter.getSessionId();
-            }
-
-            logger = this.child(thisObj);
-            clsAdapter.setLogger(logger);
-        }
-
-        return logger.logger;
+        return _obj;
     }
 }
 

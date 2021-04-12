@@ -28,15 +28,10 @@ class ContextFactory {
             await new Promise(namespace.bind(function (resolve, reject) {
                 const correlationId = ctx.get(correlationIdHeader) || generateRandomAlphanumeric(correlationIdLength);
                 const sessionId = ctx.get(sessionIdHeader) || ctx.get('x-device-id') || ctx.get('deviceid') || null;
+                ContextFactory.initializeCorrelationSessionId(namespace, correlationId, sessionId);
 
-                namespace.set(
-                    'correlationId',
-                    correlationId,
-                );
                 ctx.set(correlationIdHeader, correlationId);
-
                 if (sessionId) {
-                    namespace.set('sessionId', sessionId);
                     ctx.set(sessionIdHeader, sessionId);
                 }
 
@@ -68,9 +63,54 @@ class ContextFactory {
     //     };
     // }
 
-    static setAdditionalLogFields(obj) {
-        Object.keys(obj).forEach(key => this.setOnContext(key, obj[key]));
+    /**
+     * This will create new context over promise-chain
+     * @param {Function} promiseFactory Function that creates promise you want to use bind for
+     */
+    static bindToPromiseFactory(promiseFactory) {
+        const namespace = this.createNamespace();
+        return new Promise(
+            namespace.bind(
+                (resolve, reject) => {
+                    this.initializeCorrelationSessionId(namespace, generateRandomAlphanumeric(correlationIdLength));
+                    promiseFactory().then(resolve).catch(reject)
+                }
+            )
+        );
     }
+
+    static initializeCorrelationSessionId(namespace, correlationId, sessionId) {
+        namespace.set(
+            'correlationId',
+            correlationId
+        );
+
+        if (sessionId) {
+            namespace.set('sessionId', sessionId);
+        }
+    }
+
+    static setAdditionalLogFields (obj) {
+        let _obj = { ...obj };
+        const existing = this.getContextStorage().additional;
+        if (existing) {
+            _obj = {
+                ...existing,
+                ..._obj,
+            }
+        }
+
+        this.setOnContext('additional', _obj);
+    }
+
+    static getAdditionalLogFields() {
+        const additional = this.getContextStorage().additional;
+        if (!additional) {
+            return { };
+        }
+        return additional;
+    }
+
 
     static run (callback) {
         const namespace = this.createNamespace();
@@ -85,7 +125,11 @@ class ContextFactory {
 
     static getContextStorage () {
         if (this._namespace && this._namespace.active) {
-            const { id, _ns_name, ...contextData } = this._namespace.active;
+            const {
+                id,
+                _ns_name,
+                ...contextData
+            } = this._namespace.active;
             return contextData;
         }
 
