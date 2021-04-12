@@ -365,7 +365,7 @@ class LoggerWrapper {
     /**
      * @param {Function} promiseFactory Function that creates promise you want to use bind for
      */
-    async addIdsToProcess(promiseFactory: Function) {
+    async createContextForPromise(promiseFactory: Function) {
         return clsAdapter.bindToPromiseFactory(promiseFactory);
     }
 
