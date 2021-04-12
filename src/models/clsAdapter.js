@@ -68,6 +68,14 @@ class ContextFactory {
     //     };
     // }
 
+    static setLogger(logger) {
+        this.setOnContext('logger', logger);
+    }
+
+    static getLogger() {
+        return this.getContextStorage().logger;
+    }
+
     static run (callback) {
         const namespace = this.createNamespace();
 

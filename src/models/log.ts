@@ -1,8 +1,8 @@
 'use strict';
 
 import {Logger} from "winston";
-import { Context } from "koa";
-import { MESSAGE } from 'triple-beam'; // dependency of winston
+import {Context} from "koa";
+import {MESSAGE} from 'triple-beam'; // dependency of winston
 
 const {
     createLogger,
@@ -63,7 +63,6 @@ function _findAndHidePassword(arg: { body: { password: any; currentPassword: any
 
 const logger = createLogger({
     format: format.combine(
-
         format((info: { stack: any; }) => {
             if (isError(info)) {
                 return {
@@ -201,8 +200,10 @@ logger.module = (moduleName: string) => logger.child({module: moduleName});
  */
 class LoggerWrapper {
     private readonly logger: Logger;
+    private isChild: boolean;
 
     constructor(log: Logger) {
+        this.isChild = false;
         this.logger = log;
     }
 
@@ -232,7 +233,8 @@ class LoggerWrapper {
 
     child(...args: { module: string; }[]): LoggerWrapper {
         // @ts-ignore
-        return new LoggerWrapper(this.logger.child(...args));
+        const newLogger = new LoggerWrapper(this.logger.child(...args));
+        newLogger.isChild = true;
     }
 
     getCorrelationId(): string {
@@ -340,43 +342,57 @@ class LoggerWrapper {
      * @private
      */
     _log(method: string, args: any = []) {
-        const thisArgs: any[] = [...args];
+        let logger = this._getLoggerWithCorrelationId();
+        let thisArgs: any[] = [...args];
 
-        // If someone logs just string message log.info('some message')
-        // add empty object as second parameter and fill it with correlationId
-        if (thisArgs.length === 1 && !isObject(thisArgs[0])) {
-            thisArgs.push({});
-        }
+        thisArgs = thisArgs.map(arg => {
+            if (isObject(arg) && arg.stack) {
+                return {
+                    ...this._extendWithStackInSubObjects(arg),
+                    stack: arg.stack,
+                }
+            }
+            return arg;
+        });
 
-        if (isObject(thisArgs[0])) {
-            thisArgs[0] = this._setCorrelationSessionId(thisArgs[0]);
-        } else if (isObject(thisArgs[1])) {
-            thisArgs[1] = this._setCorrelationSessionId(thisArgs[1]);
-        }
         // @ts-ignore
-        this.logger[method](...thisArgs);
+        logger[method](...thisArgs);
+    }
+
+    _extendWithStackInSubObjects(arg: any) {
+        return Object.keys(arg).map(key => {
+            const subObj = arg[key];
+            if (isObject(subObj) && subObj.stack) {
+                return {
+                    ...subObj,
+                    stack: subObj.stack,
+                }
+            }
+            return subObj;
+        });
     }
 
     /**
      * Add correlation and sessionId
-     * @param {Object} obj
      * @returns {Object} obj with correlationId and sessionId
      */
-    _setCorrelationSessionId(obj: any): any {
-        const thisObj = {
-            ...obj,
-            correlationId: clsAdapter.getCorrelationId()
-        };
+    _getLoggerWithCorrelationId(): any {
+        let logger: LoggerWrapper = clsAdapter.getLogger();
 
-        if (clsAdapter.getSessionId()) {
-            thisObj.sessionId = clsAdapter.getSessionId();
+        if (!logger) {
+            const thisObj: any = {
+                correlationId: clsAdapter.getCorrelationId()
+            };
+
+            if (clsAdapter.getSessionId()) {
+                thisObj.sessionId = clsAdapter.getSessionId();
+            }
+
+            logger = this.child(thisObj);
+            clsAdapter.setLogger(logger);
         }
 
-        if (obj.stack) {
-            thisObj.stack = obj.stack;
-        }
-
-        return thisObj;
+        return logger.logger;
     }
 }
 

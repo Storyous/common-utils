@@ -82,7 +82,7 @@ describe('Using Koa with correlationId', () => {
         server = app.listen(port);
     });
 
-    it('should keep the same correlationId through middlewares and function calls', async () => {
+    it.only('should keep the same correlationId through middlewares and function calls', async () => {
         logs = [];
 
         await fetch(`http://localhost:${port}/valid/path`, {
