@@ -1,8 +1,8 @@
 'use strict';
 
 import {Logger} from "winston";
-import { Context } from "koa";
-import { MESSAGE } from 'triple-beam'; // dependency of winston
+import {Context} from "koa";
+import {MESSAGE} from 'triple-beam'; // dependency of winston
 
 const {
     createLogger,
@@ -63,7 +63,6 @@ function _findAndHidePassword(arg: { body: { password: any; currentPassword: any
 
 const logger = createLogger({
     format: format.combine(
-
         format((info: { stack: any; }) => {
             if (isError(info)) {
                 return {
@@ -201,8 +200,10 @@ logger.module = (moduleName: string) => logger.child({module: moduleName});
  */
 class LoggerWrapper {
     private readonly logger: Logger;
+    private isChild: boolean;
 
     constructor(log: Logger) {
+        this.isChild = false;
         this.logger = log;
     }
 
@@ -237,6 +238,10 @@ class LoggerWrapper {
 
     getCorrelationId(): string {
         return clsAdapter.getCorrelationId();
+    }
+
+    getSessionId(): string {
+        return clsAdapter.getSessionId();
     }
 
     /**
@@ -340,32 +345,48 @@ class LoggerWrapper {
      * @private
      */
     _log(method: string, args: any = []) {
-        const thisArgs: any[] = [...args];
+        let thisArgs: any[] = [...args];
 
-        // If someone logs just string message log.info('some message')
-        // add empty object as second parameter and fill it with correlationId
         if (thisArgs.length === 1 && !isObject(thisArgs[0])) {
             thisArgs.push({});
         }
 
-        if (isObject(thisArgs[0])) {
-            thisArgs[0] = this._setCorrelationSessionId(thisArgs[0]);
-        } else if (isObject(thisArgs[1])) {
-            thisArgs[1] = this._setCorrelationSessionId(thisArgs[1]);
-        }
+        thisArgs = thisArgs.map(arg => {
+            if (isObject(arg)) {
+                return this._setAdditionalFieldsId(arg);
+            }
+            return arg;
+        });
+
         // @ts-ignore
         this.logger[method](...thisArgs);
     }
 
     /**
-     * Add correlation and sessionId
+     * @param {Function} promiseFactory Function that creates promise you want to use bind for
+     */
+    async createContextForPromise(promiseFactory: Function) {
+        return clsAdapter.bindToPromiseFactory(promiseFactory);
+    }
+
+    /**
+     * To add extra fields to all logs in given context
+     * @param {Object} obj
+     */
+    setAdditionalFieldsForContext(obj: any) {
+        clsAdapter.setAdditionalLogFields(obj);
+    }
+
+    /**
+     * Add correlation, sessionId and additional properties to logs
      * @param {Object} obj
      * @returns {Object} obj with correlationId and sessionId
      */
-    _setCorrelationSessionId(obj: any): any {
-        const thisObj = {
-            ...obj,
-            correlationId: clsAdapter.getCorrelationId()
+    _setAdditionalFieldsId(obj: any): any {
+        const thisObj: any = {
+            ...this._extendWithStackInSubObjects(obj),
+            correlationId: clsAdapter.getCorrelationId(),
+            ...clsAdapter.getAdditionalLogFields()
         };
 
         if (clsAdapter.getSessionId()) {
@@ -377,6 +398,22 @@ class LoggerWrapper {
         }
 
         return thisObj;
+    }
+
+    // If error is subobject make sure it load the stack
+    _extendWithStackInSubObjects(obj: any) {
+        const _obj = {...obj};
+        Object.keys(_obj).forEach(key => {
+            const subObj = _obj[key];
+            if (isObject(subObj) && subObj.stack) {
+                _obj[key] = {
+                    ...subObj,
+                    stack: subObj.stack,
+                }
+            }
+        });
+
+        return _obj;
     }
 }
 

@@ -29,6 +29,7 @@ import mongoClient from './mongoClient';
 import getCollection from './getCollection';
 import withTransaction from './withTransaction';
 import i18n from './i18n.js';
+import utils from './utils';
 
 export {
     AppError,
@@ -58,5 +59,6 @@ export {
     MigrationsStore,
     prometheus,
     runMigrations,
-    usageTracker
+    usageTracker,
+    utils
 };
