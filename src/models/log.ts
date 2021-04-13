@@ -211,7 +211,15 @@ class LoggerWrapper {
         this._log('trace', args);
     }
 
+    t(...args: any[]) {
+        this._log('trace', args);
+    }
+
     debug(...args: any[]) {
+        this._log('debug', args);
+    }
+
+    d(...args: any[]) {
         this._log('debug', args);
     }
 
@@ -219,11 +227,23 @@ class LoggerWrapper {
         this._log('info', args);
     }
 
+    i(...args: any[]) {
+        this._log('info', args);
+    }
+
     warn(...args: any[]) {
         this._log('warn', args);
     }
 
+    w(...args: any[]) {
+        this._log('warn', args);
+    }
+
     error(...args: any[]) {
+        this._log('error', args);
+    }
+
+    e(...args: any[]) {
         this._log('error', args);
     }
 
