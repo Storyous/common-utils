@@ -87,4 +87,20 @@ describe('logging', () => {
 
         await server.close();
     });
+
+    it('should use logs and shortcuts without error', async () => {
+        log.trace('abc', { a: 'b' });
+        log.silly('abc', { a: 'b' });
+        log.debug('abc', { a: 'b' });
+        log.info('abc', { a: 'b' });
+        log.warn('abc', { a: 'b' });
+        log.error('abc', { a: 'b' });
+
+        log.s('abc', { a: 'b' });
+        log.t('abc', { a: 'b' });
+        log.d('abc', { a: 'b' });
+        log.i('abc', { a: 'b' });
+        log.w('abc', { a: 'b' });
+        log.e('abc', { a: 'b' });
+    });
 });
