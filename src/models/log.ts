@@ -207,24 +207,52 @@ class LoggerWrapper {
         this.logger = log;
     }
 
+    silly(...args: any[]) {
+        this._log('silly', args);
+    }
+
+    s(...args: any[]) {
+        this.silly(...args);
+    }
+
     trace(...args: any[]) {
-        this._log('trace', args);
+        this.silly(...args);
+    }
+
+    t(...args: any[]) {
+        this.silly(...args);
     }
 
     debug(...args: any[]) {
         this._log('debug', args);
     }
 
+    d(...args: any[]) {
+        this.debug(...args);
+    }
+
     info(...args: any[]) {
         this._log('info', args);
+    }
+
+    i(...args: any[]) {
+        this.info(...args);
     }
 
     warn(...args: any[]) {
         this._log('warn', args);
     }
 
+    w(...args: any[]) {
+        this.warn(...args);
+    }
+
     error(...args: any[]) {
         this._log('error', args);
+    }
+
+    e(...args: any[]) {
+        this.error(...args);
     }
 
     module(moduleName: string): LoggerWrapper {
