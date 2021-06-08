@@ -9,7 +9,6 @@ const assert = require('assert');
 
 const fetch = require('../lib/fetch');
 
-
 describe('fetch', () => {
 
     const url = 'http://127.0.0.1:3939/endpoint';

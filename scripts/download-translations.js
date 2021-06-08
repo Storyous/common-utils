@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+'use strict';
 const fs = require('fs');
 const path = require('path');
 const { program } = require('commander');
@@ -13,7 +13,6 @@ program.parse(process.argv);
 const {
     token, dir: targetDir, project, resource: resourceName
 } = program;
-
 
 const projectResourcesUrl = `https://api.lingohub.com/v1/storyous/projects/${project}/resources`;
 

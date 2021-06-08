@@ -20,6 +20,7 @@ const connectAndGetMongoClient = async () => {
 before(() => connectAndGetMongoClient());
 
 after(() => {
+    // eslint-disable-next-line no-console
     console.log('Disconnecting from the database');
     mongoClient.close();
 });

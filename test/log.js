@@ -12,7 +12,6 @@ const AppError = require('../lib/appError');
 const errorHandler = require('../lib/errorHandler');
 const fetch = require('../lib/fetch');
 
-
 describe('logging', () => {
 
     it('should be possible to log with module', async () => {
@@ -58,7 +57,6 @@ describe('logging', () => {
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
     });
-
 
     it('should be possible to use log-middleware without params', async () => {
         const app = new Koa();
