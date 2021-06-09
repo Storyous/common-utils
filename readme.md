@@ -136,6 +136,23 @@ The mongoLocker now also handles expired document waiting to be deleted by a Mon
 `Secrets` now encrypt strings differently. Use `encryptLegacy()` function to achieve old behaviour. `decrypt()` function is compatible with legacy secrets automatically.
 `encrypt()` method now generates secrets compatible with implementation on Admin (PHP), and the updated `decrypt()` function.
 
+### 16.3.0
+`storyousAuthorizedFetch` - fetch for calling storyous services. It can obtain, cache and automatically refresh access token against the login service
+```javascript
+// tokenStorage.js
+const serviceResponse = await storyousAuthorizedFetch('https://api.storyous.com/delivery/somePath', {
+    // mandatory parameters
+    loginUrl: 'https://login.storyous.com',
+    clientId: 'abc',
+    clientSecret: 'def',
+    
+    // general fetch options
+    method: 'POST',
+    // ...
+});
+```
+
+
 ## MongoCachedFetcher
 
 ### Usage:  

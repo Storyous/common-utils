@@ -25,6 +25,7 @@ import secrets from './secrets';
 import mongoErrorCodes from './mongoErrorCodes';
 import externalId from './externalId';
 import fetch from './fetch';
+import storyousAuthorizedFetch from './storyousAuthorizedFetch';
 import mongoClient from './mongoClient';
 import getCollection from './getCollection';
 import withTransaction from './withTransaction';
@@ -49,6 +50,7 @@ export {
     mongodb,
     externalId,
     fetch,
+    storyousAuthorizedFetch,
     mongoClient,
     getCollection,
     i18n,
