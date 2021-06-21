@@ -2,7 +2,6 @@
 
 const AppError = require('./appError');
 
-
 const attemptRecursive = async (task, startAttemptsDelay, latestTime, callNumber) => (
     task().catch(async (err) => {
         if (AppError.isConcurrentRequestError(err)) {

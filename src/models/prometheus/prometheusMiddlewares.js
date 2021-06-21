@@ -5,7 +5,6 @@ const promClient = require('prom-client');
 const config = require('../../config');
 const register = require('./register');
 
-
 module.exports = {
 
     /**
