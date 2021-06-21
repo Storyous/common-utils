@@ -13,7 +13,6 @@ const { isObject } = require('lodash');
  * info: usageTracker output {"additionalInfo":{},"name":"/:merchantPlaceId/settings-PUT","count":1}
  */
 
-
 /**
  * Each resource must have specific structure in order to process it.
  * This is factory method for initiation of new one
