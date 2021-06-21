@@ -1,8 +1,6 @@
 'use strict';
 
-
 const configuration = {
-
 
     /* CONSTANTS */
     DEVELOPMENT: 'development',

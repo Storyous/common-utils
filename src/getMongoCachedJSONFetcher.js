@@ -78,7 +78,6 @@ const findRecordOrThrow = async (collection, key, projection) => {
 
 const isYoungEnough = (fetchedAt, freshnessLimitDate) => fetchedAt >= freshnessLimitDate;
 
-
 /**
  * @param {CacheConfig} cacheConfig
  * @param {string} key
@@ -165,7 +164,6 @@ const getKeyResolver = (cacheConfig, key, url) => {
                 .then(resolve, reject)
                 .finally(() => clearTimeout(timeoutId));
         });
-
 
         return {
             meta: {
