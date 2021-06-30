@@ -137,9 +137,6 @@ The mongoLocker now also handles expired document waiting to be deleted by a Mon
 `encrypt()` method now generates secrets compatible with implementation on Admin (PHP), and the updated `decrypt()` function.
 
 ### 16.3.0
-Add option to squash multiple logs into one based on URL
-`app.use(log.basicLogMiddleware({ squashByUrls: ['/public/sodexo/restaurants'] }));`
-
 `storyousAuthorizedFetch` - fetch for calling storyous services. It can obtain, cache and automatically refresh access token against the login service
 ```javascript
 // tokenStorage.js
@@ -154,6 +151,10 @@ const serviceResponse = await storyousAuthorizedFetch('https://api.storyous.com/
     // ...
 });
 ```
+
+### 16.4.0
+Add option to squash multiple logs into one based on URL
+`app.use(log.basicLogMiddleware({ squashByUrls: ['/public/sodexo/restaurants'] }));`
 
 ## MongoCachedFetcher
 
