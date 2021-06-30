@@ -140,6 +140,21 @@ The mongoLocker now also handles expired document waiting to be deleted by a Mon
 Add option to squash multiple logs into one based on URL
 `app.use(log.basicLogMiddleware({ squashByUrls: ['/public/sodexo/restaurants'] }));`
 
+`storyousAuthorizedFetch` - fetch for calling storyous services. It can obtain, cache and automatically refresh access token against the login service
+```javascript
+// tokenStorage.js
+const serviceResponse = await storyousAuthorizedFetch('https://api.storyous.com/delivery/somePath', {
+    // mandatory parameters
+    loginUrl: 'https://login.storyous.com',
+    clientId: 'abc',
+    clientSecret: 'def',
+    
+    // general fetch options
+    method: 'POST',
+    // ...
+});
+```
+
 ## MongoCachedFetcher
 
 ### Usage:  
