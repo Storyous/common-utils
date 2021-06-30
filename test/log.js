@@ -88,6 +88,20 @@ describe('logging', () => {
         await server.close();
     });
 
+    it('should be possible to use log middleware with squashByUrls param', async () => {
+        const app = new Koa();
+        app.use(log.initKoa());
+        app.use(log.basicLogMiddleware({ squashByUrls: ['something'] }));
+        const server = app.listen();
+
+        // not 500 means it did not fail
+        await supertest(server)
+            .get('/anything')
+            .expect(404);
+
+        await server.close();
+    });
+
     it('should use logs and shortcuts without error', async () => {
         log.trace('abc', { a: 'b' });
         log.silly('abc', { a: 'b' });
