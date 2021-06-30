@@ -136,6 +136,10 @@ The mongoLocker now also handles expired document waiting to be deleted by a Mon
 `Secrets` now encrypt strings differently. Use `encryptLegacy()` function to achieve old behaviour. `decrypt()` function is compatible with legacy secrets automatically.
 `encrypt()` method now generates secrets compatible with implementation on Admin (PHP), and the updated `decrypt()` function.
 
+### 16.3.0
+Add option to squash multiple logs into one based on URL
+`app.use(log.basicLogMiddleware({ squashByUrls: ['/public/sodexo/restaurants'] }));`
+
 ## MongoCachedFetcher
 
 ### Usage:  
