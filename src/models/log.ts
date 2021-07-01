@@ -201,10 +201,12 @@ logger.module = (moduleName: string) => logger.child({module: moduleName});
 class LoggerWrapper {
     private readonly logger: Logger;
     private isChild: boolean;
+    private squashMap: Map<string, { count: number, lastSquashTime: Date }>;
 
     constructor(log: Logger) {
         this.isChild = false;
         this.logger = log;
+        this.squashMap = new Map();
     }
 
     silly(...args: any[]) {
@@ -285,12 +287,13 @@ class LoggerWrapper {
     }
 
     basicLogMiddleware({
-                           fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
-                       } = {}) {
+                           fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
+        squashByUrls = []
+                       }: {fullLogMethods?: string[], squashByUrls?: string[]} = {}) {
         return async (ctx: Context, next: Function) => {
             const startTime = new Date();
             const fullLog = fullLogMethods.includes(ctx.method.toUpperCase());
-            let outResponse = {};
+            let outResponse:any = {};
 
             if (fullLog) {
                 // Better to log basic info right away,
@@ -304,12 +307,30 @@ class LoggerWrapper {
 
             await next();
 
+            if (squashByUrls.length > 0) {
+                // having number 1 allows to use sum metric in graphs for logs that has squashed values
+                outResponse.reqCnt = 1;
+            }
+
+            let squashObj = null;
+            if (!fullLog && ctx.status >= 200 && ctx.status < 400 && squashByUrls.includes(ctx.url)) {
+                squashObj = this.squashMap.get(ctx.url) || { count: 0, lastSquashTime: new Date() };
+                squashObj.count++;
+                if (new Date().valueOf() - squashObj.lastSquashTime.valueOf() < 20*1000) {
+                    this.squashMap.set(ctx.url, squashObj);
+                    return;
+                }
+                outResponse.reqCnt = squashObj.count;
+                this.squashMap.set(ctx.url, { count: 0, lastSquashTime: new Date() });
+            }
+
             const matched = get(ctx, 'matched', [])
                 .map((match: { path: any; }) => match.path)
                 // // These two values are in every single request and it is just polluting graphs and logs
                 .filter((path: string) => path !== '*' && path !== '(.*)' && path !== '([^/]*)');
 
             outResponse = {
+                ...outResponse,
                 status: ctx.status,
                 // Loggly cannot split graphs based on number-based fields, this is recommended approach by them
                 // **Facepalm**

@@ -152,6 +152,9 @@ const serviceResponse = await storyousAuthorizedFetch('https://api.storyous.com/
 });
 ```
 
+### 16.4.0
+Add option to squash multiple logs into one based on URL
+`app.use(log.basicLogMiddleware({ squashByUrls: ['/public/sodexo/restaurants'] }));`
 
 ## MongoCachedFetcher
 
