@@ -1,3 +1,4 @@
+'use strict';
 const AppError = require('../../appError');
 
 class InvalidInputError extends AppError {
