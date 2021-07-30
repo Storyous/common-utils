@@ -1,7 +1,7 @@
 const { it, describe } = require('mocha');
 const assert = require('assert');
 const {
-    validArrayInputs, invalidArrayInputs, expectedHexResult, expectedArrayResult, invalidHexInputs,
+    validArrayInputs, invalidArrayInputs, expectedHexResult, expectedArrayResult, invalidHexInputs, validHexInput
 } = require('./permissionsMockData');
 const { encodeData, decodeData } = require('../src/models/permissions/permissionHelper');
 
@@ -27,7 +27,7 @@ describe('Encoding functionality', () => {
     describe('Testing decoding function', () => {
         it('Should decode to boolean array', async () => {
 
-            expectedHexResult.forEach((item, index) => {
+            validHexInput.forEach((item, index) => {
                 const response = decodeData(item);
                 assert.deepStrictEqual(response, expectedArrayResult[index]);
             });

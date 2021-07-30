@@ -46,7 +46,6 @@ function encodeData (booleanArray) {
                 .toString(16);
         })
         .join('');
-
 }
 /**
  *
