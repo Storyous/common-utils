@@ -3,7 +3,7 @@ const assert = require('assert');
 const {
     validArrayInputs, invalidArrayInputs, expectedHexResult, expectedArrayResult, invalidHexInputs, validHexInput
 } = require('./permissionsMockData');
-const { encodeData, decodeData } = require('../src/models/permissions/permissionHelper');
+const { encodeData, decodeData } = require("../lib/models/permissions");
 
 describe('Encoding functionality', () => {
     describe('Testing encoding function', () => {
