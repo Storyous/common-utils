@@ -3,7 +3,8 @@ const validArrayInputs = [
     [false, false, false, true, true],
     [true, false, false, false, false],
     [true,false,true,false],
-    [true,false,true,false,true,false,true,false]];
+    [true,false,true,false,true,false,true,false],
+    [true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,true]];
 
 const invalidArrayInputs = [
     [true, true, true, 0],
@@ -13,7 +14,7 @@ const invalidArrayInputs = [
     [true, true, true, false, false, {}]
     ];
 
-const expectedHexResult = ['e4', '18', '80',"a","aa"];
+const expectedHexResult = ['e4', '18', '80',"a","aa","aaaaaaaaaaaaaaaaaaaaaaaaaab"];
 const validHexInput=['e4', '18', '80',"a","Aa"]
 const expectedArrayResult = [
     [true, true, true, false, false, true, false, false],
