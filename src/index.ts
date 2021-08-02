@@ -31,6 +31,7 @@ import getCollection from './getCollection';
 import withTransaction from './withTransaction';
 import i18n from './i18n.js';
 import utils from './utils';
+import permissionHelper  from "./models/permissions";
 
 export {
     AppError,
@@ -62,5 +63,6 @@ export {
     prometheus,
     runMigrations,
     usageTracker,
-    utils
+    utils,
+    permissionHelper
 };
