@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "run-p test:lint build --aggregate-output && npm run test:mocha",
-    "test:mocha": "cd test && mocha ./",
+    "test:mocha": "cross-env NODE_ENV=testing mocha",
     "test:lint": "eslint src",
     "dev": "tsc --watch",
     "build": "rimraf lib && tsc",
@@ -54,6 +54,7 @@
     "winston-transport": "^4.4.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "@tsconfig/node14": "^1.0.0",
     "@types/i18next-fs-backend": "^1.0.0",
     "@types/koa": "^2.11.8",
