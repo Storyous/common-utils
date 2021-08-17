@@ -11,7 +11,8 @@ const { isProduction, isTesting } = require('../../config');
 const publicKeys = {};
 let _publicKeyUrl;
 let keyName;
-if (isProduction()) { _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicProduction'; } else if (isTesting()) {
+if (isProduction()) { _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicProduction'; } else
+if (isTesting()) {
     _publicKeyUrl = 'http://127.0.0.1:3010/getPublicKey'; keyName = 'publicTesting';
 } else { _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicTest'; }
 const publicKeyPath = path.join(__dirname, '..', '..', '..', 'publicKeys', keyName);
