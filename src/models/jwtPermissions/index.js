@@ -8,15 +8,13 @@ const { permissionHelper, fetch } = require('../../index');
 const { NotSufficientPermissions } = require('./customErrors');
 const { isProduction, isTesting } = require('../../config');
 
-const publicKeyPath = path.join(__dirname, '.', 'keys', 'public');
-
 const publicKeys = {};
-
 let _publicKeyUrl;
-
-if (isProduction()) { _publicKeyUrl = 'http://publickey.storyous.com'; } else if (isTesting()) {
-    _publicKeyUrl = 'http://127.0.0.1:3010/getPublicKey';
-} else { _publicKeyUrl = 'http://publickey.storyous.com'; }
+let keyName;
+if (isProduction()) { _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicProduction'; } else if (isTesting()) {
+    _publicKeyUrl = 'http://127.0.0.1:3010/getPublicKey'; keyName = 'publicTesting';
+} else { _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicTest'; }
+const publicKeyPath = path.join(__dirname, '..', '..', '..', 'publicKeys', keyName);
 
 /**
  *

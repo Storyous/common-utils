@@ -68,7 +68,7 @@ describe('JWT authorization', () => {
 
 
     });
-    it('should fail decode token with invalid public key', async () => {
+    it('should fail decode token with invalid publicTesting key', async () => {
         signedToken = jwtTokenSign(mockPayload, privateKey);
         await server.close();
         startServerWithToken({ publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey' });
