@@ -36,10 +36,19 @@ let router;
 let issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
 const jwtTokenSign = (payload) => issuer.createToken(payload, []);
 
+const errorCatchingMiddleware = async (ctx, next) => {
+    try {
+        await next();
+    } catch (err) {
+        ctx.body = { error: { message: err.message, code: err.code } };
+    }
+};
+
 const startServerWithToken = ({ publicKeyUrl }) => {
     app = new Koa();
     app.use(koaBody({ includeUnparsed: true }));
     router = routerFactory();
+    app.use(errorCatchingMiddleware);
     router.get('/', validateJwtWithPermissions({ publicKeyUrl }),
         (ctx) => {
             ctx.body = { jwtPayload: ctx.state.jwtPayload, permissions: ctx.state.permissions };
@@ -72,74 +81,58 @@ describe('JWT authorization', () => {
         signedToken = jwtTokenSign(mockPayload, privateKey);
         await server.close();
         startServerWithToken({ publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey' });
-        let error;
-        try {
-            await fetch.json(`http://127.0.0.1:${port}/`,
-                {
-                    method: 'get',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `"Bearer" ${signedToken}`
-                    }
-                });
-        } catch (e) {
-            error = e;
-        }
-        assert(error instanceof Error);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, { error: { message: 'Token is not valid.', code: 401 } });
 
     });
 
     it('should fail decode token with different issuer', async () => {
         issuer = new JWTIssuer({ issuer: 'mockUser', privateKey });
         signedToken = issuer.createToken(mockPayload, []);
-        let error;
-        try {
-            await fetch.json(`http://127.0.0.1:${port}/`,
-                {
-                    method: 'get',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `"Bearer" ${signedToken}`
-                    }
-                });
-        } catch (e) {
-            error = e;
-        }
-        assert(error instanceof Error);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, { error: { message: 'Token is not valid.', code: 401 } });
     });
 
     it('should fail decode expired token', async () => {
         issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', expiresInSec: 0, privateKey });
         signedToken = issuer.createToken(mockPayload, []);
-        let error;
-        try {
-            await fetch.json(`http://127.0.0.1:${port}/`,
-                {
-                    method: 'get',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `"Bearer" ${signedToken}`
-                    }
-                });
-        } catch (e) {
-            error = e;
-        }
-        assert(error instanceof Error);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, { error: { message: 'Token is expired.', code: 401 } });
     });
     it('should fail on missing authorization', async () => {
-        let error;
-        try {
-            await fetch.json(`http://127.0.0.1:${port}/`,
-                {
-                    method: 'get',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-        } catch (e) {
-            error = e;
-        }
-        assert(error instanceof Error);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        assert.deepStrictEqual(response, { error: { message: 'Token is not valid.', code: 401 } });
     });
 });
 describe('JWT authorization and permission validation', () => {
@@ -147,6 +140,7 @@ describe('JWT authorization and permission validation', () => {
         app = new Koa();
         app.use(koaBody({ includeUnparsed: true }));
         router = routerFactory();
+        app.use(errorCatchingMiddleware);
         router.get('/', validateJwtWithPermissions({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
             checkPermissionRights(3),
             (ctx) => {
@@ -181,40 +175,30 @@ describe('JWT authorization and permission validation', () => {
         issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
         signedToken = issuer.createToken({ ...mockPayload, permissions: '2' }, []);
 
-        let error;
-        try {
-            await fetch.json(`http://127.0.0.1:${port}/`,
-                {
-                    method: 'get',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `"Bearer" ${signedToken}`
-                    }
-                });
-        } catch (e) {
-            error = e;
-        }
-        assert(error instanceof Error);
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, { error: { message: 'Not sufficient permissions.', code: 403 } });
     });
 
     it('should fail on missing permissions', async () => {
         issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
         signedToken = issuer.createToken({ merchantId: mockPayload.merchantId }, []);
 
-        let error;
-        try {
-            await fetch.json(`http://127.0.0.1:${port}/`,
-                {
-                    method: 'get',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `"Bearer" ${signedToken}`
-                    }
-                });
-        } catch (e) {
-            error = e;
-        }
-        assert(error instanceof Error);
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, { error: { message: 'Not sufficient permissions.', code: 403 } });
     });
 });
 
@@ -223,6 +207,7 @@ describe('JWT authorization and strict permission validation', () => {
     before(async () => {
         app = new Koa();
         app.use(koaBody({ includeUnparsed: true }));
+        app.use(errorCatchingMiddleware);
         router = routerFactory();
         router.get('/', validateJwtWithPermissions({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
             checkPermissionRightsStrict([2, 3]),
@@ -263,39 +248,31 @@ describe('JWT authorization and strict permission validation', () => {
         issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
         signedToken = issuer.createToken({ ...mockPayload, permissions: '6' }, []);
 
-        let error;
-        try {
-            await fetch.json(`http://127.0.0.1:${port}/`,
-                {
-                    method: 'get',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `"Bearer" ${signedToken}`
-                    }
-                });
-        } catch (e) {
-            error = e;
-        }
-        assert(error instanceof Error);
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+
+        assert.deepStrictEqual(response, { error: { message: 'Not sufficient permissions.', code: 403 } });
+
     });
 
     it('should fail on missing permissions', async () => {
         issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
         signedToken = issuer.createToken({ merchantId: mockPayload.merchantId }, []);
 
-        let error;
-        try {
-            await fetch.json(`http://127.0.0.1:${port}/`,
-                {
-                    method: 'get',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `"Bearer" ${signedToken}`
-                    }
-                });
-        } catch (e) {
-            error = e;
-        }
-        assert(error instanceof Error);
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, { error: { message: 'Not sufficient permissions.', code: 403 } });
     });
 });

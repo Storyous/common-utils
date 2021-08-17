@@ -1,10 +1,10 @@
 'use strict';
 const { UserNotAuthorised } = require('./userNotAuthorised');
 const { InvalidPermission } = require('./invalidPermissionError');
-const { MissingToken } = require('./missingToken');
 const { NotSufficientPermissions } = require('./notSufficientPermission');
 const { InvalidToken } = require('./invalidToken');
+const { ExpiredToken } = require('./expiredToken');
 
 module.exports = {
-    UserNotAuthorised, InvalidPermission, MissingToken, NotSufficientPermissions, InvalidToken
+    UserNotAuthorised, InvalidPermission, NotSufficientPermissions, InvalidToken, ExpiredToken
 };

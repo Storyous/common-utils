@@ -5,16 +5,17 @@ const path = require('path');
 
 // eslint-disable-next-line import/no-unresolved
 const { permissionHelper, fetch } = require('../../index');
-const { NotSufficientPermissions } = require('./customErrors');
-const { isProduction, isTesting } = require('../../config');
+const { NotSufficientPermissions, InvalidToken, ExpiredToken } = require('./customErrors');
+const config = require('../../config');
 
 const publicKeys = {};
 let _publicKeyUrl;
 let keyName;
-if (isProduction()) { _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicProduction'; } else
-if (isTesting()) {
+if (config.isProduction()) {
+    _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicProduction';
+} else if (config.isTesting()) {
     _publicKeyUrl = 'http://127.0.0.1:3010/getPublicKey'; keyName = 'publicTesting';
-} else { _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicTest'; }
+} else { _publicKeyUrl = 'https://publickey.story-test.com/'; keyName = 'publicTest'; }
 const publicKeyPath = path.join(__dirname, '..', '..', '..', 'publicKeys', keyName);
 
 /**
@@ -25,7 +26,10 @@ const publicKeyPath = path.join(__dirname, '..', '..', '..', 'publicKeys', keyNa
 const parseAuthorization = (authorization) => {
     if (!authorization) { return ''; }
     const parsedAuthorization = authorization.split(' ').filter((i) => i !== ' ');
-    return parsedAuthorization[1];
+    if (parsedAuthorization[0] === '"Bearer"' || parsedAuthorization[0] === 'Bearer') {
+        return parsedAuthorization[1];
+    }
+    throw new InvalidToken();
 };
 
 /**
@@ -45,7 +49,7 @@ function decodePayload (payload) {
  * @param {string|null}publicKeyUrl
  * @returns {Promise<string>}
  */
-async function getJwt (publicKeyUrl = null) {
+async function getJwt (publicKeyUrl = _publicKeyUrl) {
     if (publicKeys[publicKeyUrl]) { return publicKeys[publicKeyUrl]; }
     const publicKeyLocal = new Promise((resolve) => {
         setTimeout(resolve, 5000, fs.readFileSync(publicKeyPath).toString());
@@ -61,12 +65,16 @@ async function getJwt (publicKeyUrl = null) {
  * @param {string|null}publicKeyUrl
  * @returns {(function(*, *): Promise<void>)|*}
  */
-exports.validateJwtWithPermissions = ({ publicKeyUrl = null }) => async (ctx, next) => {
-    if (!publicKeyUrl) publicKeyUrl = _publicKeyUrl;
+exports.validateJwtWithPermissions = ({ publicKeyUrl = _publicKeyUrl }) => async (ctx, next) => {
     const publicKey = await getJwt(publicKeyUrl);
     const jwtToken = parseAuthorization(ctx.get('authorization'));
     const verifier = new JWTVerifier({ issuer: 'Storyous s.r.o.', algorithm: 'RS256', publicKey });
-    const decodedToken = decodePayload(verifier.verifyAndDecodeToken(jwtToken));
+    let decodedToken;
+    try { decodedToken = decodePayload(verifier.verifyAndDecodeToken(jwtToken)); } catch (err) {
+        if (err.code === 'ERR_OSSL_PEM_BAD_BASE64_DECODE' || err.name === 'JsonWebTokenError') {
+            throw new InvalidToken(err.reason);
+        } else if (err.name === 'TokenExpiredError') { throw new ExpiredToken(); } else { throw err; }
+    }
     ctx.state.permissions = decodedToken.decodedPayload.decodedPermissions;
     ctx.state.jwtPayload = decodedToken;
     await next();
@@ -97,14 +105,8 @@ exports.checkPermissionRightsStrict = (permissions) => async (ctx, next) => {
 exports.checkPermissionRights = (permissions) => async (ctx, next) => {
     permissions = typeof permissions !== 'object' ? [permissions] : permissions;
     const tokenPermissions = ctx.state.permissions || [];
-    let isValid = false;
-    permissions.every((index) => {
-        if (tokenPermissions[index]) {
-            isValid = true;
-            return false;
-        } return true;
-    });
-    if (!isValid) {
+    const validPermission = permissions.find((i) => tokenPermissions[i]);
+    if (!validPermission) {
         throw new NotSufficientPermissions(permissions);
     } else { await next(); }
 };

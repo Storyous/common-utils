@@ -1,15 +1,14 @@
 'use strict';
-const { NotAuthorized } = require('./notAuthorized');
+const AppError = require('../../../appError');
 
-class NotSufficientPermissions extends NotAuthorized {
+class NotSufficientPermissions extends AppError {
 
-    /**
-     * @param {number[]|number} permissions
-     */
-    constructor (permissions) {
-        super('Permissions are not sufficient for selected operation.', {
-            permissions
+    constructor () {
+        super('Not sufficient permissions.', {
+            httpStatus: 403,
+            code: 403
         });
+
     }
 }
 exports.NotSufficientPermissions = NotSufficientPermissions;
