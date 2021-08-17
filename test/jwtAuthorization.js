@@ -51,7 +51,7 @@ const startServerWithToken = ({ publicKeyUrl }) => {
 };
 
 
-describe.only('JWT authorization', () => {
+describe('JWT authorization', () => {
     beforeEach(() => startServerWithToken({}));
     afterEach(async () => server.close());
     it('should decode token', async () => {
@@ -147,7 +147,8 @@ describe('JWT authorization and permission validation', () => {
         app = new Koa();
         app.use(koaBody({ includeUnparsed: true }));
         router = routerFactory();
-        router.get('/', validateJwtWithPermissions({}), checkPermissionRights(3),
+        router.get('/', validateJwtWithPermissions({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
+            checkPermissionRights(3),
             (ctx) => {
                 ctx.body = { jwtPayload: ctx.state.jwtPayload, permissions: ctx.state.permissions };
                 ctx.status = 200;
@@ -218,12 +219,13 @@ describe('JWT authorization and permission validation', () => {
 });
 
 
-describe.only('JWT authorization and strict permission validation', () => {
+describe('JWT authorization and strict permission validation', () => {
     beforeEach(async () => {
         app = new Koa();
         app.use(koaBody({ includeUnparsed: true }));
         router = routerFactory();
-        router.get('/', validateJwtWithPermissions({}), checkPermissionRightsStrict([2, 3]),
+        router.get('/', validateJwtWithPermissions({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
+            checkPermissionRightsStrict([2, 3]),
             (ctx) => {
                 ctx.body = {
                     jwtPayload: ctx.state.jwtPayload,
