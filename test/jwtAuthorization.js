@@ -2,7 +2,7 @@
 require('./config');
 const {
     describe,
-    it, beforeEach, afterEach
+    it, beforeEach, afterEach, before, after
 } = require('mocha');
 const assert = require('assert');
 const Koa = require('koa');
@@ -143,7 +143,7 @@ describe('JWT authorization', () => {
     });
 });
 describe('JWT authorization and permission validation', () => {
-    beforeEach(async () => {
+    before(async () => {
         app = new Koa();
         app.use(koaBody({ includeUnparsed: true }));
         router = routerFactory();
@@ -158,7 +158,7 @@ describe('JWT authorization and permission validation', () => {
         server = app.listen(port);
     });
 
-    afterEach(async () => server.close());
+    after(async () => server.close());
 
     it('should validate permissions', async () => {
         issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
@@ -220,7 +220,7 @@ describe('JWT authorization and permission validation', () => {
 
 
 describe('JWT authorization and strict permission validation', () => {
-    beforeEach(async () => {
+    before(async () => {
         app = new Koa();
         app.use(koaBody({ includeUnparsed: true }));
         router = routerFactory();
@@ -238,7 +238,7 @@ describe('JWT authorization and strict permission validation', () => {
         server = app.listen(port);
     });
 
-    afterEach(async () => server.close());
+    after(async () => server.close());
 
 
     it('should validate permissions', async () => {

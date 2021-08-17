@@ -62,8 +62,8 @@ async function getJwt (publicKeyUrl = null) {
  * @returns {(function(*, *): Promise<void>)|*}
  */
 exports.validateJwtWithPermissions = ({ publicKeyUrl = null }) => async (ctx, next) => {
-    if (publicKeyUrl) _publicKeyUrl = publicKeyUrl;
-    const publicKey = await getJwt(_publicKeyUrl);
+    if (!publicKeyUrl) publicKeyUrl = _publicKeyUrl;
+    const publicKey = await getJwt(publicKeyUrl);
     const jwtToken = parseAuthorization(ctx.get('authorization'));
     const verifier = new JWTVerifier({ issuer: 'Storyous s.r.o.', algorithm: 'RS256', publicKey });
     const decodedToken = decodePayload(verifier.verifyAndDecodeToken(jwtToken));
