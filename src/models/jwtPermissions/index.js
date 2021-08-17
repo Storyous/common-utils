@@ -73,10 +73,12 @@ exports.validateJwtWithPermissions = ({ publicKeyUrl = _publicKeyUrl }) => async
     try { decodedToken = decodePayload(verifier.verifyAndDecodeToken(jwtToken)); } catch (err) {
         if (err.message === 'error:0906D064:PEM routines:PEM_read_bio:bad base64 decode'
             || err.message === 'error:09091064:PEM routines:PEM_read_bio_ex:bad base64 decode'
+            || err.message === 'PEM_read_bio_PUBKEY failed'
             || err.name === 'JsonWebTokenError') {
             throw new InvalidToken(err.reason);
         } else if (err.name === 'TokenExpiredError') { throw new ExpiredToken(); } else { throw err; }
     }
+    // PEM_read_bio_PUBKEY failed
     ctx.state.permissions = decodedToken.decodedPayload.decodedPermissions;
     ctx.state.jwtPayload = decodedToken;
     await next();
