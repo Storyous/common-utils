@@ -50,7 +50,7 @@ const configuration = {
      * @returns {boolean}
      */
     isProduction () {
-        return this.env === this.PRODUCTION;
+        return this ? this.env === this.PRODUCTION : false;
     },
     /**
      * Returns if is in testing mode
@@ -59,7 +59,7 @@ const configuration = {
      */
 
     isTesting () {
-        return this.env === this.TESTING;
+        return this ? this.env === this.TESTING : true;
     },
 
     /**

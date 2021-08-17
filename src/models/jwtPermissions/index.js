@@ -1,9 +1,9 @@
 'use strict';
-const { JWTVerifier, JWTIssuer } = require('@storyous/storyous-jwt');
+const { JWTVerifier } = require('@storyous/storyous-jwt');
 const fs = require('fs');
 const path = require('path');
-// eslint-disable-next-line import/no-unresolved
-const { permissionHelper, fetch } = require('../../index');
+
+const { permissionHelper, fetch } = require('../../../lib');
 const { NotSufficientPermissions } = require('./customErrors');
 const { isProduction, isTesting } = require('../../config');
 
@@ -11,19 +11,40 @@ const publicKeyPath = path.join(__dirname, '.', 'keys', 'public');
 
 const publicKeys = {};
 
+let _publicKeyUrl;
 
-let _publicKeyUrl = 'http://127.0.0.1:3010/getPublicKey';
-// if (isProduction()) { publicKeyUrl = 'http://publickey.storyous.com'; } else if (isTesting()) {
-//     publicKeyUrl = 'http://127.0.0.1:3010/getPublicKey';
-// } else { publicKeyUrl = 'http://publickey.storyous.com'; }
+if (isProduction()) { _publicKeyUrl = 'http://publickey.storyous.com'; } else if (isTesting()) {
+    _publicKeyUrl = 'http://127.0.0.1:3010/getPublicKey';
+} else { _publicKeyUrl = 'http://publickey.storyous.com'; }
 
+/**
+ *
+ * @param {null|string}authorization
+ * @returns {string}
+ */
+const parseAuthorization = (authorization) => {
+    if (!authorization) { return ''; }
+    const parsedAuthorization = authorization.split(' ').filter((i) => i !== ' ');
+    return parsedAuthorization[1];
+};
 
+/**
+ *
+ * @param {object}payload
+ * @returns {{decodedPayload: {merchantId:string, decodedPermissions: (boolean[])}, originalPayload}}
+ */
 function decodePayload (payload) {
     const { permissions, merchantId } = payload;
     const decodedPermissions = permissions ? permissionHelper.decodeData(permissions) : [];
     return { originalPayload: payload, decodedPayload: { merchantId, decodedPermissions } };
 
 }
+
+/**
+ *
+ * @param {string|null}publicKeyUrl
+ * @returns {Promise<string>}
+ */
 async function getJwt (publicKeyUrl = null) {
     if (publicKeys[publicKeyUrl]) { return publicKeys[publicKeyUrl]; }
     const publicKeyLocal = new Promise((resolve) => {
@@ -35,9 +56,15 @@ async function getJwt (publicKeyUrl = null) {
     return publicKeys[publicKeyUrl];
 }
 
-exports.validateJwtWithPermissions = (jwtToken, { publicKeyUrl = null }) => async (ctx, next) => {
+/**
+ *
+ * @param {string|null}publicKeyUrl
+ * @returns {(function(*, *): Promise<void>)|*}
+ */
+exports.validateJwtWithPermissions = ({ publicKeyUrl = null }) => async (ctx, next) => {
     if (publicKeyUrl) _publicKeyUrl = publicKeyUrl;
     const publicKey = await getJwt(_publicKeyUrl);
+    const jwtToken = parseAuthorization(ctx.get('authorization'));
     const verifier = new JWTVerifier({ issuer: 'Storyous s.r.o.', algorithm: 'RS256', publicKey });
     const decodedToken = decodePayload(verifier.verifyAndDecodeToken(jwtToken));
     ctx.state.permissions = decodedToken.decodedPayload.decodedPermissions;
@@ -45,17 +72,13 @@ exports.validateJwtWithPermissions = (jwtToken, { publicKeyUrl = null }) => asyn
     await next();
 };
 
-
-exports.jwtTokenSign = (payload, privateKey = null) => {
-    if (!privateKey) {
-        const privateKeyPath = path.join(__dirname, '.', 'keys', 'private');
-        privateKey = fs.readFileSync(privateKeyPath).toString();
-    }
-    const issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
-    return issuer.createToken(payload, []);
-};
-
+/**
+ *
+ * @param {number|number[]}permissions
+ * @returns {(function(*, *): Promise<void>)|*}
+ */
 exports.checkPermissionRightsStrict = (permissions) => async (ctx, next) => {
+    permissions = typeof permissions !== 'object' ? [permissions] : permissions;
     const tokenPermissions = ctx.state.permissions;
     permissions.every((index) => {
         if (!tokenPermissions[index]) {
@@ -65,7 +88,14 @@ exports.checkPermissionRightsStrict = (permissions) => async (ctx, next) => {
     });
     await next();
 };
+
+/**
+ *
+ * @param {number|number[]}permissions
+ * @returns {(function(*, *): Promise<void>)|*}
+ */
 exports.checkPermissionRights = (permissions) => async (ctx, next) => {
+    permissions = typeof permissions !== 'object' ? [permissions] : permissions;
     const tokenPermissions = ctx.state.permissions || [];
     let isValid = false;
     permissions.every((index) => {
@@ -79,6 +109,11 @@ exports.checkPermissionRights = (permissions) => async (ctx, next) => {
     } else { await next(); }
 };
 
+/**
+ *
+ * @param {string|null}publicKeyUrl
+ * @returns {Promise<void>}
+ */
 exports.init = async function ({ publicKeyUrl = null }) {
     if (publicKeyUrl) _publicKeyUrl = publicKeyUrl;
     await getJwt(publicKeyUrl);

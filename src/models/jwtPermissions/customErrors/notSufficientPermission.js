@@ -4,7 +4,7 @@ const { NotAuthorized } = require('./notAuthorized');
 class NotSufficientPermissions extends NotAuthorized {
 
     /**
-     * @param {string[]} permissions
+     * @param {number[]|number} permissions
      */
     constructor (permissions) {
         super('Permissions are not sufficient for selected operation.', {
