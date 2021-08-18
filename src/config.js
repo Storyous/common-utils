@@ -52,6 +52,15 @@ const configuration = {
     isProduction () {
         return this.env === this.PRODUCTION;
     },
+    /**
+     * Returns if is in testing mode
+     *
+     * @returns {boolean}
+     */
+
+    isTesting () {
+        return this.env === this.TESTING;
+    },
 
     /**
      * Constructs testing DB name for testing pipelines from desired prefix and commit hash if present.
