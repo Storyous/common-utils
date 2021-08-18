@@ -51,6 +51,7 @@ function decodePayload (payload) {
  */
 async function getJwt (publicKeyUrl = _publicKeyUrl) {
     if (publicKeys[publicKeyUrl]) { return publicKeys[publicKeyUrl]; }
+    if (config.loadPublicKeyFromFile) { return fs.readFileSync(publicKeyPath).toString(); }
     const publicKeyLoaded = fetch.text(publicKeyUrl);
     const timer = new Promise((resolve, reject) => setTimeout(reject, 5000));
     try {

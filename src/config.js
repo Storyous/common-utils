@@ -14,6 +14,8 @@ const configuration = {
 
     production: false,
 
+    loadPublicKeyFromFile: false,
+
     /**
      * System environment
      */
