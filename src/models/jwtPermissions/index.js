@@ -51,15 +51,15 @@ function decodePayload (payload) {
  */
 async function getJwt (publicKeyUrl = _publicKeyUrl) {
     if (publicKeys[publicKeyUrl]) { return publicKeys[publicKeyUrl]; }
-    const publicKeyLocal = new Promise((resolve) => {
-        setTimeout(resolve, 5000, fs.readFileSync(publicKeyPath).toString());
-    });
-    let publicKeyLoaded;
+    const publicKeyLoaded = fetch.text(publicKeyUrl);
+    const timer = new Promise((resolve, reject) => setTimeout(reject, 500));
     try {
-        publicKeyLoaded = fetch.text(publicKeyUrl);
-    } catch (err) { publicKeyLoaded = null; }
-
-    publicKeys[publicKeyUrl] = await Promise.race([publicKeyLocal, publicKeyLoaded]);
+        publicKeys[publicKeyUrl] = await Promise.race([publicKeyLoaded, timer]);
+    } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log(err);
+        publicKeys[publicKeyUrl] = fs.readFileSync(publicKeyPath).toString();
+    }
     return publicKeys[publicKeyUrl];
 }
 
@@ -123,10 +123,12 @@ exports.checkPermissionRights = (permissions) => async (ctx, next) => {
  * @param {string|null}publicKeyUrl
  * @returns {Promise<void>}
  */
-exports.init = async function ({ publicKeyUrl = null }) {
-    if (publicKeyUrl) _publicKeyUrl = publicKeyUrl;
+exports.init = async function ({ publicKeyUrl = _publicKeyUrl }) {
     await getJwt(publicKeyUrl);
     setInterval(async () => {
-        publicKeys[publicKeyUrl] = await fetch.text(publicKeyUrl);
+        try { publicKeys[publicKeyUrl] = await fetch.text(publicKeyUrl); } catch (err) {
+            // eslint-disable-next-line no-console
+            console.log(err);
+        }
     }, 60 * 60 * 1000);
 };
