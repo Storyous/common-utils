@@ -54,7 +54,10 @@ async function getJwt (publicKeyUrl = _publicKeyUrl) {
     const publicKeyLocal = new Promise((resolve) => {
         setTimeout(resolve, 5000, fs.readFileSync(publicKeyPath).toString());
     });
-    const publicKeyLoaded = fetch.text(publicKeyUrl);
+    let publicKeyLoaded;
+    try {
+        publicKeyLoaded = fetch.text(publicKeyUrl);
+    } catch (err) { publicKeyLoaded = null; }
 
     publicKeys[publicKeyUrl] = await Promise.race([publicKeyLocal, publicKeyLoaded]);
     return publicKeys[publicKeyUrl];
