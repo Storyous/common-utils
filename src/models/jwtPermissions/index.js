@@ -11,6 +11,8 @@ const config = require('../../config');
 const publicKeys = {};
 let _publicKeyUrl;
 let keyName;
+let _loadPublicKeyFromFile;
+
 if (config.isProduction()) {
     _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicProduction';
 } else if (config.isTesting()) {
@@ -51,7 +53,7 @@ function decodePayload (payload) {
  */
 async function getJwt (publicKeyUrl = _publicKeyUrl) {
     if (publicKeys[publicKeyUrl]) { return publicKeys[publicKeyUrl]; }
-    if (config.loadPublicKeyFromFile) { return fs.readFileSync(publicKeyPath).toString(); }
+    if (_loadPublicKeyFromFile) { return fs.readFileSync(publicKeyPath).toString(); }
     const publicKeyLoaded = fetch.text(publicKeyUrl);
     const timer = new Promise((resolve, reject) => setTimeout(reject, 5000));
     try {
@@ -124,7 +126,8 @@ exports.checkPermissionRights = (permissions) => async (ctx, next) => {
  * @param {string|null}publicKeyUrl
  * @returns {Promise<void>}
  */
-exports.init = async function ({ publicKeyUrl = _publicKeyUrl }) {
+exports.init = async function ({ publicKeyUrl = _publicKeyUrl, loadPublicKeyFromFile = null }) {
+    _loadPublicKeyFromFile = loadPublicKeyFromFile;
     await getJwt(publicKeyUrl);
     setInterval(async () => {
         try { publicKeys[publicKeyUrl] = await fetch.text(publicKeyUrl); } catch (err) {
