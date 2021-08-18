@@ -14,6 +14,7 @@ const configuration = {
 
     production: false,
 
+
     /**
      * System environment
      */
