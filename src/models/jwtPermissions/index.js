@@ -52,7 +52,7 @@ function decodePayload (payload) {
 async function getJwt (publicKeyUrl = _publicKeyUrl) {
     if (publicKeys[publicKeyUrl]) { return publicKeys[publicKeyUrl]; }
     const publicKeyLoaded = fetch.text(publicKeyUrl);
-    const timer = new Promise((resolve, reject) => setTimeout(reject, 500));
+    const timer = new Promise((resolve, reject) => setTimeout(reject, 5000));
     try {
         publicKeys[publicKeyUrl] = await Promise.race([publicKeyLoaded, timer]);
     } catch (err) {
