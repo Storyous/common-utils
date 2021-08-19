@@ -71,7 +71,7 @@ async function getJwt (publicKeyUrl = _publicKeyUrl) {
  * @param {string|null}publicKeyUrl
  * @returns {(function(*, *): Promise<void>)|*}
  */
-exports.validateJwtWithPermissions = ({ publicKeyUrl = _publicKeyUrl }) => async (ctx, next) => {
+exports.validateJwtWithPermissions = ({ publicKeyUrl = _publicKeyUrl } = {}) => async (ctx, next) => {
     const publicKey = await getJwt(publicKeyUrl);
     const jwtToken = parseAuthorization(ctx.get('authorization'));
     const verifier = new JWTVerifier({ issuer: 'Storyous s.r.o.', algorithm: 'RS256', publicKey });
@@ -84,7 +84,6 @@ exports.validateJwtWithPermissions = ({ publicKeyUrl = _publicKeyUrl }) => async
             throw new InvalidToken(err.reason);
         } else if (err.name === 'TokenExpiredError') { throw new ExpiredToken(); } else { throw err; }
     }
-    // PEM_read_bio_PUBKEY failed
     ctx.state.permissions = decodedToken.decodedPayload.decodedPermissions;
     ctx.state.jwtPayload = decodedToken;
     await next();
@@ -124,9 +123,10 @@ exports.checkPermissionRights = (permissions) => async (ctx, next) => {
 /**
  *
  * @param {string|null}publicKeyUrl
+ * @param {boolean}loadPublicKeyFromFile
  * @returns {Promise<void>}
  */
-exports.init = async function ({ publicKeyUrl = _publicKeyUrl, loadPublicKeyFromFile = null }) {
+exports.init = async function ({ publicKeyUrl = _publicKeyUrl, loadPublicKeyFromFile = false } = {}) {
     _loadPublicKeyFromFile = loadPublicKeyFromFile;
     await getJwt(publicKeyUrl);
     setInterval(async () => {
