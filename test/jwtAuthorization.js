@@ -1,5 +1,4 @@
 'use strict';
-require('./config');
 const {
     describe,
     it, beforeEach, afterEach, before, after
@@ -8,33 +7,28 @@ const assert = require('assert');
 const Koa = require('koa');
 const koaBody = require('koa-body');
 const routerFactory = require('koa-router');
-const { JWTIssuer } = require('@storyous/storyous-jwt');
+const { JWTIssuer, Scope } = require('@storyous/storyous-jwt');
+const _ = require('lodash');
 const JWTMockServer = require('./JWTMockServer');
 const { jwtPermissions, fetch } = require('../lib');
+const {
+    scopes, defaultMerchantId, mockPayload, restrictions, expectedPayload
+} = require('./JWTAuthorizationMockData');
 
 const {
-    validateJwtWithPermissions, checkPermissionRights, checkPermissionRightsStrict
+    validateJwtTokenMiddleware, validatePermissionRightsMiddleWare, validatePermissionRightsStrictMiddleWare,
+    authorizeUser
 } = jwtPermissions;
-
 
 const { privateKey } = JWTMockServer;
 
-const mockPayload = { merchantId: '123456789abc', permissions: '00F' };
-let expectedPayload = {
-    merchantId: mockPayload.merchantId,
-    decodedPermissions:
-        [false, false, false, false, false, false, false, false, true, true, true, true]
-};
-
-let signedToken;
 const port = 3456;
 let server;
 let app;
 let router;
 
-
-let issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
-const jwtTokenSign = (payload) => issuer.createToken(payload, []);
+const issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey }, { expiresInSec: 3600 });
+const jwtTokenSign = (payload) => issuer.createToken(payload, scopes);
 
 const errorCatchingMiddleware = async (ctx, next) => {
     try {
@@ -49,7 +43,7 @@ const startServerWithToken = ({ publicKeyUrl }) => {
     app.use(koaBody({ includeUnparsed: true }));
     router = routerFactory();
     app.use(errorCatchingMiddleware);
-    router.get('/', validateJwtWithPermissions({ publicKeyUrl }),
+    router.get('/', validateJwtTokenMiddleware({ publicKeyUrl }),
         (ctx) => {
             ctx.body = { jwtPayload: ctx.state.jwtPayload, permissions: ctx.state.permissions };
             ctx.status = 200;
@@ -59,12 +53,11 @@ const startServerWithToken = ({ publicKeyUrl }) => {
     server = app.listen(port);
 };
 
-
 describe('JWT authorization', () => {
-    beforeEach(() => startServerWithToken({}));
+    beforeEach(() => startServerWithToken({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }));
     afterEach(async () => server.close());
     it('should decode token', async () => {
-        signedToken = jwtTokenSign(mockPayload, privateKey);
+        const signedToken = jwtTokenSign(mockPayload);
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
                 method: 'get',
@@ -73,12 +66,11 @@ describe('JWT authorization', () => {
                     authorization: `"Bearer" ${signedToken}`
                 }
             });
-        assert.deepStrictEqual(response.jwtPayload.decodedPayload, expectedPayload);
-
+        assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
 
     });
     it('should fail decode token with invalid publicTesting key', async () => {
-        signedToken = jwtTokenSign(mockPayload, privateKey);
+        const signedToken = jwtTokenSign(mockPayload);
         await server.close();
         startServerWithToken({ publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey' });
 
@@ -95,8 +87,8 @@ describe('JWT authorization', () => {
     });
 
     it('should fail decode token with different issuer', async () => {
-        issuer = new JWTIssuer({ issuer: 'mockUser', privateKey });
-        signedToken = issuer.createToken(mockPayload, []);
+        const mockIssuer = new JWTIssuer({ issuer: 'mockUser', privateKey });
+        const signedToken = mockIssuer.createToken(mockPayload, scopes);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
@@ -110,8 +102,8 @@ describe('JWT authorization', () => {
     });
 
     it('should fail decode expired token', async () => {
-        issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', expiresInSec: 0, privateKey });
-        signedToken = issuer.createToken(mockPayload, []);
+        const expiredIssuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', expiresInSec: 0, privateKey });
+        const signedToken = expiredIssuer.createToken(mockPayload, scopes);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
@@ -141,80 +133,11 @@ describe('JWT authorization and permission validation', () => {
         app.use(koaBody({ includeUnparsed: true }));
         router = routerFactory();
         app.use(errorCatchingMiddleware);
-        router.get('/', validateJwtWithPermissions({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
-            checkPermissionRights(3),
-            (ctx) => {
-                ctx.body = { jwtPayload: ctx.state.jwtPayload, permissions: ctx.state.permissions };
-                ctx.status = 200;
-            }
-        );
-        app.use(router.routes());
-        server = app.listen(port);
-    });
-
-    after(async () => server.close());
-
-    it('should validate permissions', async () => {
-        issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
-        signedToken = issuer.createToken({ ...mockPayload, permissions: '1' }, []);
-
-        const response = await fetch.json(`http://127.0.0.1:${port}/`,
-            {
-                method: 'get',
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `"Bearer" ${signedToken}`
-                }
-            });
-        expectedPayload = { ...expectedPayload, decodedPermissions: [false, false, false, true] };
-        assert.deepStrictEqual(response.jwtPayload.decodedPayload, expectedPayload);
-        assert.deepStrictEqual(response.permissions, [false, false, false, true]);
-    });
-
-    it('should fail on invalid permissions', async () => {
-        issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
-        signedToken = issuer.createToken({ ...mockPayload, permissions: '2' }, []);
-
-        const response = await fetch.json(`http://127.0.0.1:${port}/`,
-            {
-                method: 'get',
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `"Bearer" ${signedToken}`
-                }
-            });
-        assert.deepStrictEqual(response, { error: { message: 'Not sufficient permissions.', code: 403 } });
-    });
-
-    it('should fail on missing permissions', async () => {
-        issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
-        signedToken = issuer.createToken({ merchantId: mockPayload.merchantId }, []);
-
-        const response = await fetch.json(`http://127.0.0.1:${port}/`,
-            {
-                method: 'get',
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `"Bearer" ${signedToken}`
-                }
-            });
-        assert.deepStrictEqual(response, { error: { message: 'Not sufficient permissions.', code: 403 } });
-    });
-});
-
-
-describe('JWT authorization and strict permission validation', () => {
-    before(async () => {
-        app = new Koa();
-        app.use(koaBody({ includeUnparsed: true }));
-        app.use(errorCatchingMiddleware);
-        router = routerFactory();
-        router.get('/', validateJwtWithPermissions({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
-            checkPermissionRightsStrict([2, 3]),
+        router.get('/', validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
+            validatePermissionRightsMiddleWare(10),
             (ctx) => {
                 ctx.body = {
-                    jwtPayload: ctx.state.jwtPayload,
-                    permissions: ctx.state.permissions
+                    jwtPayload: ctx.state.jwtPayload
                 };
                 ctx.status = 200;
             }
@@ -225,11 +148,8 @@ describe('JWT authorization and strict permission validation', () => {
 
     after(async () => server.close());
 
-
     it('should validate permissions', async () => {
-        issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
-        signedToken = issuer.createToken({ ...mockPayload, permissions: '7' }, []);
-
+        const signedToken = jwtTokenSign(mockPayload);
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
                 method: 'get',
@@ -238,15 +158,17 @@ describe('JWT authorization and strict permission validation', () => {
                     authorization: `"Bearer" ${signedToken}`
                 }
             });
-        const decodedPermissions = [false, true, true, true];
-        const decodedPayload = { ...expectedPayload, decodedPermissions };
-        assert.deepStrictEqual(response.jwtPayload.decodedPayload, decodedPayload);
-        assert.deepStrictEqual(response.permissions, decodedPermissions);
+
+        assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
     });
 
     it('should fail on invalid permissions', async () => {
-        issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
-        signedToken = issuer.createToken({ ...mockPayload, permissions: '6' }, []);
+        const invalidPermissionScope = [new Scope(
+            'perms',
+            restrictions,
+            '000'
+        )];
+        const signedToken = issuer.createToken(mockPayload, invalidPermissionScope);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
@@ -256,14 +178,38 @@ describe('JWT authorization and strict permission validation', () => {
                     authorization: `"Bearer" ${signedToken}`
                 }
             });
+        assert.deepStrictEqual(response, {
+            error: {
+                message: 'Not sufficient permissions.',
+                code: 403
+            }
+        });
+    });
+});
 
-        assert.deepStrictEqual(response, { error: { message: 'Not sufficient permissions.', code: 403 } });
-
+describe('JWT authorization and strict permission validation', () => {
+    before(async () => {
+        app = new Koa();
+        app.use(koaBody({ includeUnparsed: true }));
+        router = routerFactory();
+        app.use(errorCatchingMiddleware);
+        router.get('/', validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
+            validatePermissionRightsStrictMiddleWare([8, 9]),
+            (ctx) => {
+                ctx.body = {
+                    jwtPayload: ctx.state.jwtPayload
+                };
+                ctx.status = 200;
+            }
+        );
+        app.use(router.routes());
+        server = app.listen(port);
     });
 
-    it('should fail on missing permissions', async () => {
-        issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey });
-        signedToken = issuer.createToken({ merchantId: mockPayload.merchantId }, []);
+    after(async () => server.close());
+
+    it('should validate permissions', async () => {
+        const signedToken = jwtTokenSign(mockPayload);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
@@ -273,6 +219,134 @@ describe('JWT authorization and strict permission validation', () => {
                     authorization: `"Bearer" ${signedToken}`
                 }
             });
-        assert.deepStrictEqual(response, { error: { message: 'Not sufficient permissions.', code: 403 } });
+        assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
+    });
+
+    it('should fail on invalid permissions', async () => {
+        const invalidPermissionScope = [new Scope(
+            'perms',
+            restrictions,
+            '008'
+        )];
+        const signedToken = issuer.createToken(mockPayload, invalidPermissionScope);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, {
+            error: {
+                message: 'Not sufficient permissions.',
+                code: 403
+            }
+        });
+    });
+});
+
+describe('test authorization function', () => {
+    const signedToken = jwtTokenSign(mockPayload);
+
+    it('should validate', async () => {
+        let err = null;
+        try {
+            await authorizeUser(
+                signedToken,
+                defaultMerchantId,
+                [8, 9],
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+        } catch (e) {
+            err = e;
+        }
+        assert(!err);
+    });
+
+    it('should fail on expired token', async () => {
+        let err = null;
+        const expiredIssuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', expiresInSec: 0, privateKey });
+        const expiredToken = expiredIssuer.createToken(mockPayload, scopes);
+        try {
+            await authorizeUser(
+                expiredToken,
+                defaultMerchantId,
+                [8, 9],
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+        } catch (e) {
+            err = e;
+        }
+        assert(err);
+        assert.deepStrictEqual(err.message, 'Token is expired.');
+        assert.deepStrictEqual(err.code, 401);
+    });
+
+    it('should fail on invalid token issuer', async () => {
+        let err = null;
+        const mockIssuer = new JWTIssuer({ issuer: 'mockUser', privateKey });
+        const invalidIssuerToken = mockIssuer.createToken(mockPayload, scopes);
+        try {
+            await authorizeUser(
+                invalidIssuerToken,
+                defaultMerchantId,
+                [8, 9],
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+        } catch (e) {
+            err = e;
+        }
+        assert(err);
+        assert.deepStrictEqual(err.message, 'Token is not valid.');
+        assert.deepStrictEqual(err.code, 401);
+    });
+    it('should fail on invalid public key', async () => {
+        let err = null;
+        const invalidIssuerToken = issuer.createToken(mockPayload, scopes);
+        try {
+            await authorizeUser(
+                invalidIssuerToken,
+                defaultMerchantId,
+                [8, 9],
+                { publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey' });
+        } catch (e) {
+            err = e;
+        }
+        assert(err);
+        assert.deepStrictEqual(err.message, 'Token is not valid.');
+        assert.deepStrictEqual(err.code, 401);
+    });
+
+    it('should fail on invalid merchant', async () => {
+        let err = null;
+        const invalidMerchant = '9876543210abcd';
+        try {
+            await authorizeUser(
+                signedToken,
+                invalidMerchant,
+                [8, 9],
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+        } catch (e) {
+            err = e;
+        }
+        assert(err);
+        assert.deepStrictEqual(err.message, 'Not authorized.');
+        assert.deepStrictEqual(err.code, 401);
+    });
+
+    it('should fail on invalid permission', async () => {
+        let err = null;
+        try {
+            await authorizeUser(
+                signedToken,
+                defaultMerchantId,
+                [1, 2],
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+        } catch (e) {
+            err = e;
+        }
+        assert(err);
+        assert.deepStrictEqual(err.message, 'Not sufficient permissions.');
+        assert.deepStrictEqual(err.code, 403);
+
     });
 });

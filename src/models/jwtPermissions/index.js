@@ -2,16 +2,18 @@
 const { JWTVerifier } = require('@storyous/storyous-jwt');
 const fs = require('fs');
 const path = require('path');
-
+const config = require('../../../lib/config');
 // eslint-disable-next-line import/no-unresolved
 const { permissionHelper, fetch } = require('../../index');
-const { NotSufficientPermissions, InvalidToken, ExpiredToken } = require('./customErrors');
-const config = require('../../config');
+const {
+    NotSufficientPermissions, InvalidToken, ExpiredToken, UserNotAuthorised
+} = require('./customErrors');
 
 const publicKeys = {};
 let _publicKeyUrl;
 let keyName;
 let _loadPublicKeyFromFile;
+const PERMISSION_SCOPE = 'perms';
 
 if (config.isProduction()) {
     _publicKeyUrl = 'http://publickey.storyous.com'; keyName = 'publicProduction';
@@ -34,17 +36,11 @@ const parseAuthorization = (authorization) => {
     throw new InvalidToken();
 };
 
-/**
- *
- * @param {object}payload
- * @returns {{decodedPayload: {merchantId:string, decodedPermissions: (boolean[])}, originalPayload}}
- */
-function decodePayload (payload) {
-    const { permissions, merchantId } = payload;
-    const decodedPermissions = permissions ? permissionHelper.decodeData(permissions) : [];
-    return { originalPayload: payload, decodedPayload: { merchantId, decodedPermissions } };
-
+function decodePermissions (permissions) {
+    return permissionHelper.decodeData(permissions);
 }
+
+const getScope = (token, scope = PERMISSION_SCOPE) => token.scopes.find((element) => element[0] === scope);
 
 /**
  *
@@ -66,44 +62,46 @@ async function getJwt (publicKeyUrl = _publicKeyUrl) {
     return publicKeys[publicKeyUrl];
 }
 
-/**
- *
- * @param {string|null}publicKeyUrl
- * @returns {(function(*, *): Promise<void>)|*}
- */
-exports.validateJwtWithPermissions = ({ publicKeyUrl = _publicKeyUrl } = {}) => async (ctx, next) => {
-    const publicKey = await getJwt(publicKeyUrl);
-    const jwtToken = parseAuthorization(ctx.get('authorization'));
+const validateJwt = async (jwtToken, url) => {
+    const publicKey = await getJwt(url);
     const verifier = new JWTVerifier({ issuer: 'Storyous s.r.o.', algorithm: 'RS256', publicKey });
     let decodedToken;
-    try { decodedToken = decodePayload(verifier.verifyAndDecodeToken(jwtToken)); } catch (err) {
+    try {
+        decodedToken = verifier.verifyAndDecodeToken(jwtToken);
+    } catch (err) {
         if (err.message === 'error:0906D064:PEM routines:PEM_read_bio:bad base64 decode'
             || err.message === 'error:09091064:PEM routines:PEM_read_bio_ex:bad base64 decode'
             || err.message === 'PEM_read_bio_PUBKEY failed'
             || err.name === 'JsonWebTokenError') {
             throw new InvalidToken(err.reason);
-        } else if (err.name === 'TokenExpiredError') { throw new ExpiredToken(); } else { throw err; }
+        } else if (err.name === 'TokenExpiredError') {
+            throw new ExpiredToken();
+        } else {
+            throw err;
+        }
     }
-    ctx.state.permissions = decodedToken.decodedPayload.decodedPermissions;
-    ctx.state.jwtPayload = decodedToken;
-    await next();
+    return decodedToken;
 };
 
 /**
  *
- * @param {number|number[]}permissions
+ * @param {string|null}publicKeyUrl
  * @returns {(function(*, *): Promise<void>)|*}
  */
-exports.checkPermissionRightsStrict = (permissions) => async (ctx, next) => {
-    permissions = typeof permissions !== 'object' ? [permissions] : permissions;
-    const tokenPermissions = ctx.state.permissions;
+exports.validateJwtTokenMiddleware = ({ publicKeyUrl = _publicKeyUrl } = {}) => async (ctx, next) => {
+    const jwtToken = parseAuthorization(ctx.get('authorization'));
+    ctx.state.jwtPayload = await validateJwt(jwtToken, publicKeyUrl);
+    await next();
+};
+
+const validatePermissionRightsStrict = (tokenPermissions, permissions) => {
+    const decodedPermissions = decodePermissions(tokenPermissions);
     permissions.every((index) => {
-        if (!tokenPermissions[index]) {
+        if (!decodedPermissions[index]) {
             throw new NotSufficientPermissions(permissions);
         }
         return true;
     });
-    await next();
 };
 
 /**
@@ -111,13 +109,34 @@ exports.checkPermissionRightsStrict = (permissions) => async (ctx, next) => {
  * @param {number|number[]}permissions
  * @returns {(function(*, *): Promise<void>)|*}
  */
-exports.checkPermissionRights = (permissions) => async (ctx, next) => {
+exports.validatePermissionRightsStrictMiddleWare = (permissions) => async (ctx, next) => {
     permissions = typeof permissions !== 'object' ? [permissions] : permissions;
-    const tokenPermissions = ctx.state.permissions || [];
-    const validPermission = permissions.find((i) => tokenPermissions[i]);
+    const tokenPermissions = getScope(ctx.state.jwtPayload, PERMISSION_SCOPE)[1];
+    validatePermissionRightsStrict(tokenPermissions, permissions);
+    await next();
+};
+/**
+ *
+ * @param {string}tokenPermissions
+ * @param {number[]|number}permissions
+ */
+const validatePermissionRights = (tokenPermissions, permissions) => {
+    const decodedPermissions = decodePermissions(tokenPermissions);
+    const validPermission = permissions.find((i) => decodedPermissions[i]);
     if (!validPermission) {
         throw new NotSufficientPermissions(permissions);
-    } else { await next(); }
+    }
+};
+/**
+ *
+ * @param {number|number[]}permissions
+ * @returns {(function(*, *): Promise<void>)|*}
+ */
+exports.validatePermissionRightsMiddleWare = (permissions) => async (ctx, next) => {
+    permissions = typeof permissions !== 'object' ? [permissions] : permissions;
+    const tokenPermissions = getScope(ctx.state.jwtPayload, PERMISSION_SCOPE)[1];
+    validatePermissionRights(tokenPermissions, permissions);
+    await next();
 };
 
 /**
@@ -135,4 +154,49 @@ exports.init = async function ({ publicKeyUrl = _publicKeyUrl, loadPublicKeyFrom
             console.log(err);
         }
     }, 60 * 60 * 1000);
+};
+
+/**
+ *
+ * @param {string}tokenMerchantId
+ * @param {string}uriMerchantId
+ * @returns {void}
+ */
+const validateMerchant = (tokenMerchantId, uriMerchantId) => {
+    if (tokenMerchantId !== uriMerchantId && tokenMerchantId !== '*') {
+        throw new UserNotAuthorised(uriMerchantId);
+    }
+};
+
+/**
+ *
+ * @param ctx
+ * @param next
+ * @returns {Promise<void>}
+ */
+exports.validateMerchantMidleware = async (ctx, next) => {
+    const { jwtPayload } = ctx.state.jwtPayload;
+    const permisisonScope = getScope(jwtPayload, PERMISSION_SCOPE);
+    const tokenMerchantId = permisisonScope[2].merchantId;
+    const uriMerchantId = ctx.params.merchantId;
+    validateMerchant(tokenMerchantId, uriMerchantId);
+    await next();
+};
+
+/**
+ *
+ * @param {string}token
+ * @param {string}merchant
+ * @param {number[]|number}permissions
+ * @param { {string|undefined} }
+ * @returns {Promise<void>}
+ */
+exports.authorizeUser = async function (token, merchant, permissions, { publicKeyUrl = _publicKeyUrl } = {}) {
+    const payload = await validateJwt(token, publicKeyUrl);
+    const permisisonScope = getScope(payload, PERMISSION_SCOPE);
+    const tokenPermissions = permisisonScope[1];
+    const tokenMerchantId = permisisonScope[2].merchantId;
+
+    validateMerchant(tokenMerchantId, merchant);
+    validatePermissionRights(tokenPermissions, permissions);
 };
