@@ -94,7 +94,7 @@ exports.validateJwtTokenMiddleware = ({ publicKeyUrl = _publicKeyUrl } = {}) => 
     await next();
 };
 
-const validatePermissionRightsStrict = (tokenPermissions, permissions) => {
+const checkPermissions = (tokenPermissions, permissions) => {
     const decodedPermissions = decodePermissions(tokenPermissions);
     permissions.every((index) => {
         if (!decodedPermissions[index]) {
@@ -109,10 +109,10 @@ const validatePermissionRightsStrict = (tokenPermissions, permissions) => {
  * @param {number|number[]} permissions
  * @returns {(function(*, *): Promise<void>)|*}
  */
-exports.validatePermissionRightsStrictMiddleWare = (permissions) => async (ctx, next) => {
+exports.checkPermissionsMiddleWare = (permissions) => async (ctx, next) => {
     permissions = typeof permissions !== 'object' ? [permissions] : permissions;
     const tokenPermissions = getScope(ctx.state.jwtPayload, PERMISSION_SCOPE)[1];
-    validatePermissionRightsStrict(tokenPermissions, permissions);
+    checkPermissions(tokenPermissions, permissions);
     await next();
 };
 /**
@@ -120,7 +120,7 @@ exports.validatePermissionRightsStrictMiddleWare = (permissions) => async (ctx, 
  * @param {string} tokenPermissions
  * @param {number[]|number} permissions
  */
-const validatePermissionRights = (tokenPermissions, permissions) => {
+const checkAtLeastOnePermissions = (tokenPermissions, permissions) => {
     const decodedPermissions = decodePermissions(tokenPermissions);
     const validPermission = permissions.find((i) => decodedPermissions[i]);
     if (!validPermission) {
@@ -132,10 +132,10 @@ const validatePermissionRights = (tokenPermissions, permissions) => {
  * @param {number|number[]} permissions
  * @returns {(function(*, *): Promise<void>)|*}
  */
-exports.validatePermissionRightsMiddleWare = (permissions) => async (ctx, next) => {
+exports.checkAtLeastOnePermissionsMiddleWare = (permissions) => async (ctx, next) => {
     permissions = typeof permissions !== 'object' ? [permissions] : permissions;
     const tokenPermissions = getScope(ctx.state.jwtPayload, PERMISSION_SCOPE)[1];
-    validatePermissionRights(tokenPermissions, permissions);
+    checkAtLeastOnePermissions(tokenPermissions, permissions);
     await next();
 };
 
@@ -223,5 +223,5 @@ exports.authorizeUser = async function (
     const { merchantId: tokenMerchantId, placesIds } = permissionScope[2];
     if (placeId) validatePlace(placesIds, placeId);
     validateMerchant(tokenMerchantId, merchantId);
-    if (permissions) validatePermissionRights(tokenPermissions, permissions);
+    if (permissions) checkAtLeastOnePermissions(tokenPermissions, permissions);
 };

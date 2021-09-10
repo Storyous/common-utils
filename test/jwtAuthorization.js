@@ -16,7 +16,7 @@ const {
 } = require('./JWTAuthorizationMockData');
 
 const {
-    validateJwtTokenMiddleware, validatePermissionRightsMiddleWare, validatePermissionRightsStrictMiddleWare,
+    validateJwtTokenMiddleware, checkAtLeastOnePermissionsMiddleWare, checkPermissionsMiddleWare,
     authorizeUser, validateMerchantMiddleware
 } = jwtPermissions;
 
@@ -134,7 +134,7 @@ describe('JWT authorization and permission validation', () => {
         router = routerFactory();
         app.use(errorCatchingMiddleware);
         router.get('/', validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
-            validatePermissionRightsMiddleWare(10),
+            checkAtLeastOnePermissionsMiddleWare(10),
             (ctx) => {
                 ctx.body = {
                     jwtPayload: ctx.state.jwtPayload
@@ -194,7 +194,7 @@ describe('JWT authorization and strict permission validation', () => {
         router = routerFactory();
         app.use(errorCatchingMiddleware);
         router.get('/', validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
-            validatePermissionRightsStrictMiddleWare([8, 9]),
+            checkPermissionsMiddleWare([8, 9]),
             (ctx) => {
                 ctx.body = {
                     jwtPayload: ctx.state.jwtPayload
