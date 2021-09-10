@@ -12,12 +12,12 @@ const _ = require('lodash');
 const JWTMockServer = require('./JWTMockServer');
 const { jwtPermissions, fetch } = require('../lib');
 const {
-    scopes, defaultMerchantId, mockPayload, restrictions, expectedPayload
+    scopes, defaultMerchantId, mockPayload, restrictions, expectedPayload, defaultPlaceId, extendedScopes, extendedExpectedPayload
 } = require('./JWTAuthorizationMockData');
 
 const {
     validateJwtTokenMiddleware, validatePermissionRightsMiddleWare, validatePermissionRightsStrictMiddleWare,
-    authorizeUser
+    authorizeUser, validateMerchantMiddleware
 } = jwtPermissions;
 
 const { privateKey } = JWTMockServer;
@@ -246,8 +246,117 @@ describe('JWT authorization and strict permission validation', () => {
         });
     });
 });
+describe('JWT authorization and merchant validation', () => {
+    before(async () => {
+        app = new Koa();
+        app.use(koaBody({ includeUnparsed: true }));
+        router = routerFactory();
+        app.use(errorCatchingMiddleware);
+        router.get('/:merchantId', validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
+            validateMerchantMiddleware,
+            (ctx) => {
+                ctx.body = {
+                    jwtPayload: ctx.state.jwtPayload
+                };
+                ctx.status = 200;
+            });
+        router.get('/merchantPlace/:merchantPlaceId',
+            validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
+            validateMerchantMiddleware,
+            (ctx) => {
+                ctx.body = {
+                    jwtPayload: ctx.state.jwtPayload
+                };
+                ctx.status = 200;
+            });
 
-describe('test authorization function', () => {
+        app.use(router.routes());
+        server = app.listen(port);
+    });
+
+    after(async () => server.close());
+
+    it('should validate merchant', async () => {
+        const signedToken = jwtTokenSign(mockPayload);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/${defaultMerchantId}`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
+    });
+
+    it('should fail on invalid merchantId', async () => {
+        const signedToken = jwtTokenSign(mockPayload);
+        const invalidMerchantId = '1234567890abcd';
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/${invalidMerchantId}`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, {
+            error: {
+                message: 'Not authorized.',
+                code: 401
+            }
+        });
+    });
+
+    it('should validate placeId', async () => {
+        const signedToken = jwtTokenSign(mockPayload);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/merchantPlace/${defaultMerchantId}-${defaultPlaceId}`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
+    });
+
+    it('should validate placeId *', async () => {
+        const signedToken = issuer.createToken(mockPayload, extendedScopes);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/merchantPlace/${defaultMerchantId}-*`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), extendedExpectedPayload);
+    });
+    it('should fail on invalid placeId', async () => {
+        const signedToken = jwtTokenSign(mockPayload);
+        const invalidPlaceId = '12345kgfkd';
+        const response = await fetch.json(`http://127.0.0.1:${port}/merchantPlace/${defaultMerchantId}-${invalidPlaceId}`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, {
+            error: {
+                message: 'Not authorized.',
+                code: 401
+            }
+        });
+    });
+});
+describe.only('test authorization function', () => {
     const signedToken = jwtTokenSign(mockPayload);
 
     it('should validate', async () => {
@@ -256,8 +365,7 @@ describe('test authorization function', () => {
             await authorizeUser(
                 signedToken,
                 defaultMerchantId,
-                [8, 9],
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9] });
         } catch (e) {
             err = e;
         }
@@ -272,8 +380,7 @@ describe('test authorization function', () => {
             await authorizeUser(
                 expiredToken,
                 defaultMerchantId,
-                [8, 9],
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9] });
         } catch (e) {
             err = e;
         }
@@ -290,8 +397,7 @@ describe('test authorization function', () => {
             await authorizeUser(
                 invalidIssuerToken,
                 defaultMerchantId,
-                [8, 9],
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9] });
         } catch (e) {
             err = e;
         }
@@ -306,8 +412,7 @@ describe('test authorization function', () => {
             await authorizeUser(
                 invalidIssuerToken,
                 defaultMerchantId,
-                [8, 9],
-                { publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey' });
+                { publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey', permissions: [8, 9] });
         } catch (e) {
             err = e;
         }
@@ -323,8 +428,7 @@ describe('test authorization function', () => {
             await authorizeUser(
                 signedToken,
                 invalidMerchant,
-                [8, 9],
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9] });
         } catch (e) {
             err = e;
         }
@@ -332,15 +436,28 @@ describe('test authorization function', () => {
         assert.deepStrictEqual(err.message, 'Not authorized.');
         assert.deepStrictEqual(err.code, 401);
     });
-
+    it('should fail on invalid placeId', async () => {
+        let err = null;
+        const invalidPlaceId = '9876543210abcd2DDW';
+        try {
+            await authorizeUser(
+                signedToken,
+                defaultMerchantId,
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9], placeId: invalidPlaceId });
+        } catch (e) {
+            err = e;
+        }
+        assert(err);
+        assert.deepStrictEqual(err.message, 'Not authorized.');
+        assert.deepStrictEqual(err.code, 401);
+    });
     it('should fail on invalid permission', async () => {
         let err = null;
         try {
             await authorizeUser(
                 signedToken,
                 defaultMerchantId,
-                [1, 2],
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' });
+                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [1, 2] });
         } catch (e) {
             err = e;
         }

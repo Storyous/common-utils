@@ -4,9 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../../../lib/config');
 // eslint-disable-next-line import/no-unresolved
-const { permissionHelper, fetch } = require('../../index');
+const { permissionHelper, fetch } = require('../..');
 const {
-    NotSufficientPermissions, InvalidToken, ExpiredToken, UserNotAuthorised
+    NotSufficientPermissions, InvalidToken, ExpiredToken, UserNotAuthorised, NotAuthorizedForPlace
 } = require('./customErrors');
 
 const publicKeys = {};
@@ -24,7 +24,7 @@ const publicKeyPath = path.join(__dirname, '..', '..', '..', 'publicKeys', keyNa
 
 /**
  *
- * @param {null|string}authorization
+ * @param {null|string} authorization
  * @returns {string}
  */
 const parseAuthorization = (authorization) => {
@@ -44,7 +44,7 @@ const getScope = (token, scope = PERMISSION_SCOPE) => token.scopes.find((element
 
 /**
  *
- * @param {string|null}publicKeyUrl
+ * @param {string|null} publicKeyUrl
  * @returns {Promise<string>}
  */
 async function getJwt (publicKeyUrl = _publicKeyUrl) {
@@ -85,7 +85,7 @@ const validateJwt = async (jwtToken, url) => {
 
 /**
  *
- * @param {string|null}publicKeyUrl
+ * @param {string|null} publicKeyUrl
  * @returns {(function(*, *): Promise<void>)|*}
  */
 exports.validateJwtTokenMiddleware = ({ publicKeyUrl = _publicKeyUrl } = {}) => async (ctx, next) => {
@@ -106,7 +106,7 @@ const validatePermissionRightsStrict = (tokenPermissions, permissions) => {
 
 /**
  *
- * @param {number|number[]}permissions
+ * @param {number|number[]} permissions
  * @returns {(function(*, *): Promise<void>)|*}
  */
 exports.validatePermissionRightsStrictMiddleWare = (permissions) => async (ctx, next) => {
@@ -117,8 +117,8 @@ exports.validatePermissionRightsStrictMiddleWare = (permissions) => async (ctx, 
 };
 /**
  *
- * @param {string}tokenPermissions
- * @param {number[]|number}permissions
+ * @param {string} tokenPermissions
+ * @param {number[]|number} permissions
  */
 const validatePermissionRights = (tokenPermissions, permissions) => {
     const decodedPermissions = decodePermissions(tokenPermissions);
@@ -129,7 +129,7 @@ const validatePermissionRights = (tokenPermissions, permissions) => {
 };
 /**
  *
- * @param {number|number[]}permissions
+ * @param {number|number[]} permissions
  * @returns {(function(*, *): Promise<void>)|*}
  */
 exports.validatePermissionRightsMiddleWare = (permissions) => async (ctx, next) => {
@@ -141,8 +141,8 @@ exports.validatePermissionRightsMiddleWare = (permissions) => async (ctx, next) 
 
 /**
  *
- * @param {string|null}publicKeyUrl
- * @param {boolean}loadPublicKeyFromFile
+ * @param {string|null} publicKeyUrl
+ * @param {boolean} loadPublicKeyFromFile
  * @returns {Promise<void>}
  */
 exports.init = async function ({ publicKeyUrl = _publicKeyUrl, loadPublicKeyFromFile = false } = {}) {
@@ -158,8 +158,8 @@ exports.init = async function ({ publicKeyUrl = _publicKeyUrl, loadPublicKeyFrom
 
 /**
  *
- * @param {string}tokenMerchantId
- * @param {string}uriMerchantId
+ * @param {string} tokenMerchantId
+ * @param {string} uriMerchantId
  * @returns {void}
  */
 const validateMerchant = (tokenMerchantId, uriMerchantId) => {
@@ -167,36 +167,61 @@ const validateMerchant = (tokenMerchantId, uriMerchantId) => {
         throw new UserNotAuthorised(uriMerchantId);
     }
 };
+/**
+ *
+ * @param {string[]} tokenPlaceIds
+ * @param {string|null} placeId
+ */
+const validatePlace = (tokenPlaceIds, placeId) => {
+    const validPlaceId = tokenPlaceIds.find((i) => i === placeId || i === '*');
+    if (!validPlaceId) {
+        throw new NotAuthorizedForPlace(placeId);
+    }
 
+};
 /**
  *
  * @param ctx
  * @param next
  * @returns {Promise<void>}
  */
-exports.validateMerchantMidleware = async (ctx, next) => {
-    const { jwtPayload } = ctx.state.jwtPayload;
-    const permisisonScope = getScope(jwtPayload, PERMISSION_SCOPE);
-    const tokenMerchantId = permisisonScope[2].merchantId;
-    const uriMerchantId = ctx.params.merchantId;
-    validateMerchant(tokenMerchantId, uriMerchantId);
+exports.validateMerchantMiddleware = async (ctx, next) => {
+    const { jwtPayload } = ctx.state;
+    const permissionScope = getScope(jwtPayload, PERMISSION_SCOPE);
+    const { merchantId, placesIds } = permissionScope[2];
+    let uriMerchantId;
+    if (ctx.params.merchantPlaceId) {
+        const parsedMerchantPlaceId = ctx.params.merchantPlaceId.split('-');
+        let uriPlacesIds;
+        [uriMerchantId, uriPlacesIds] = parsedMerchantPlaceId;
+        validatePlace(placesIds, uriPlacesIds);
+    } else {
+        uriMerchantId = ctx.params.merchantId;
+    }
+
+    validateMerchant(merchantId, uriMerchantId);
     await next();
 };
 
 /**
  *
- * @param {string}token
- * @param {string}merchant
- * @param {number[]|number}permissions
- * @param { {string|undefined} }
+ * @param {string} token
+ * @param {string} merchantId
+ * @param {number[]|number} permissions
+ * @param {string|undefined} publicKeyUrl
+ * @param {string|null} placeId
+ * @param {string|null} placeId
+ * @param {number[]|number|undefined} permissions
  * @returns {Promise<void>}
  */
-exports.authorizeUser = async function (token, merchant, permissions, { publicKeyUrl = _publicKeyUrl } = {}) {
+exports.authorizeUser = async function (
+    token, merchantId, { publicKeyUrl = _publicKeyUrl, placeId = null, permissions } = {}
+) {
     const payload = await validateJwt(token, publicKeyUrl);
-    const permisisonScope = getScope(payload, PERMISSION_SCOPE);
-    const tokenPermissions = permisisonScope[1];
-    const tokenMerchantId = permisisonScope[2].merchantId;
-
-    validateMerchant(tokenMerchantId, merchant);
-    validatePermissionRights(tokenPermissions, permissions);
+    const permissionScope = getScope(payload, PERMISSION_SCOPE);
+    const tokenPermissions = permissionScope[1];
+    const { merchantId: tokenMerchantId, placesIds } = permissionScope[2];
+    if (placeId) validatePlace(placesIds, placeId);
+    validateMerchant(tokenMerchantId, merchantId);
+    if (permissions) validatePermissionRights(tokenPermissions, permissions);
 };

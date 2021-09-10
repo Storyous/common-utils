@@ -7,13 +7,20 @@ exports.mockPayload = {
     personId: '5bfec53bef2ca200131988aa'
 };
 exports.defaultMerchantId = '123456789abc';
-
+exports.defaultPlaceId = '5bfec53bef2ca200131988ac';
 const merchantRestriction = new Restriction('merchantId', exports.defaultMerchantId);
-const placeRestrictions = new Restriction('placeId', [
+const placeRestrictions = new Restriction('placesIds', [
     '5bfec53bef2ca200131988ac',
     '5bfec53bef2ca200131988aa',
     '5bfec53bef2ca200131988ab',
     '5bfec53bef2ca200131988au'
+]);
+const placeRestrictionExtended = new Restriction('placesIds', [
+    '5bfec53bef2ca200131988ac',
+    '5bfec53bef2ca200131988aa',
+    '5bfec53bef2ca200131988ab',
+    '5bfec53bef2ca200131988au',
+    '*'
 ]);
 exports.restrictions = [merchantRestriction, placeRestrictions];
 exports.scopes = [new Scope(
@@ -31,11 +38,38 @@ exports.expectedPayload = {
             '00F',
             {
                 merchantId: exports.defaultMerchantId,
-                placeId: [
+                placesIds: [
                     '5bfec53bef2ca200131988ac',
                     '5bfec53bef2ca200131988aa',
                     '5bfec53bef2ca200131988ab',
                     '5bfec53bef2ca200131988au'
+                ]
+            }
+        ]
+    ],
+    iss: 'Storyous s.r.o.'
+};
+exports.extendedScopes = [new Scope(
+    'perms',
+    [merchantRestriction, placeRestrictionExtended],
+    '00F'
+)];
+exports.extendedExpectedPayload = {
+    clientId: exports.mockPayload.clientId,
+    deviceId: exports.mockPayload.deviceId,
+    personId: exports.mockPayload.personId,
+    scopes: [
+        [
+            'perms',
+            '00F',
+            {
+                merchantId: exports.defaultMerchantId,
+                placesIds: [
+                    '5bfec53bef2ca200131988ac',
+                    '5bfec53bef2ca200131988aa',
+                    '5bfec53bef2ca200131988ab',
+                    '5bfec53bef2ca200131988au',
+                    '*'
                 ]
             }
         ]
