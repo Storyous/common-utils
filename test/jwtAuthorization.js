@@ -16,7 +16,7 @@ const {
 } = require('./JWTAuthorizationMockData');
 
 const {
-    validateJwtTokenMiddleware, checkAtLeastOnePermissionsMiddleWare, checkPermissionsMiddleWare,
+    validateJwtTokenMiddleware, checkAtLeastOnePermissionMiddleWare, checkPermissionsMiddleWare,
     authorizeUser, validateMerchantMiddleware
 } = jwtPermissions;
 
@@ -134,7 +134,7 @@ describe('JWT authorization and permission validation', () => {
         router = routerFactory();
         app.use(errorCatchingMiddleware);
         router.get('/', validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
-            checkAtLeastOnePermissionsMiddleWare(10),
+            checkAtLeastOnePermissionMiddleWare(10),
             (ctx) => {
                 ctx.body = {
                     jwtPayload: ctx.state.jwtPayload
@@ -269,6 +269,15 @@ describe('JWT authorization and merchant validation', () => {
                 };
                 ctx.status = 200;
             });
+        router.get('/placeId/:merchantId/:placeId',
+            validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
+            validateMerchantMiddleware,
+            (ctx) => {
+                ctx.body = {
+                    jwtPayload: ctx.state.jwtPayload
+                };
+                ctx.status = 200;
+            });
 
         app.use(router.routes());
         server = app.listen(port);
@@ -324,6 +333,20 @@ describe('JWT authorization and merchant validation', () => {
         assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
     });
 
+    it('should validate placeId', async () => {
+        const signedToken = jwtTokenSign(mockPayload);
+
+        const response = await fetch.json(`http://127.0.0.1:${port}/placeId/${defaultMerchantId}/${defaultPlaceId}`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
+    });
+
     it('should validate placeId *', async () => {
         const signedToken = issuer.createToken(mockPayload, extendedScopes);
 
@@ -337,7 +360,7 @@ describe('JWT authorization and merchant validation', () => {
             });
         assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), extendedExpectedPayload);
     });
-    it('should fail on invalid placeId', async () => {
+    it('should fail on invalid merchantPlaceId', async () => {
         const signedToken = jwtTokenSign(mockPayload);
         const invalidPlaceId = '12345kgfkd';
         const response = await fetch.json(`http://127.0.0.1:${port}/merchantPlace/${defaultMerchantId}-${invalidPlaceId}`,
@@ -355,8 +378,26 @@ describe('JWT authorization and merchant validation', () => {
             }
         });
     });
+    it('should fail on invalid placeId', async () => {
+        const signedToken = jwtTokenSign(mockPayload);
+        const invalidPlaceId = '12345kgfkd';
+        const response = await fetch.json(`http://127.0.0.1:${port}/placeId/${defaultMerchantId}/${invalidPlaceId}`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, {
+            error: {
+                message: 'Not authorized.',
+                code: 401
+            }
+        });
+    });
 });
-describe.only('test authorization function', () => {
+describe('test authorization function', () => {
     const signedToken = jwtTokenSign(mockPayload);
 
     it('should validate', async () => {

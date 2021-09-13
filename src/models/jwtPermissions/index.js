@@ -120,7 +120,7 @@ exports.checkPermissionsMiddleWare = (permissions) => async (ctx, next) => {
  * @param {string} tokenPermissions
  * @param {number[]|number} permissions
  */
-const checkAtLeastOnePermissions = (tokenPermissions, permissions) => {
+const checkAtLeastOnePermission = (tokenPermissions, permissions) => {
     const decodedPermissions = decodePermissions(tokenPermissions);
     const validPermission = permissions.find((i) => decodedPermissions[i]);
     if (!validPermission) {
@@ -132,10 +132,10 @@ const checkAtLeastOnePermissions = (tokenPermissions, permissions) => {
  * @param {number|number[]} permissions
  * @returns {(function(*, *): Promise<void>)|*}
  */
-exports.checkAtLeastOnePermissionsMiddleWare = (permissions) => async (ctx, next) => {
+exports.checkAtLeastOnePermissionMiddleWare = (permissions) => async (ctx, next) => {
     permissions = typeof permissions !== 'object' ? [permissions] : permissions;
     const tokenPermissions = getScope(ctx.state.jwtPayload, PERMISSION_SCOPE)[1];
-    checkAtLeastOnePermissions(tokenPermissions, permissions);
+    checkAtLeastOnePermission(tokenPermissions, permissions);
     await next();
 };
 
@@ -190,15 +190,16 @@ exports.validateMerchantMiddleware = async (ctx, next) => {
     const permissionScope = getScope(jwtPayload, PERMISSION_SCOPE);
     const { merchantId, placesIds } = permissionScope[2];
     let uriMerchantId;
+    let uriPlaceId;
     if (ctx.params.merchantPlaceId) {
-        const parsedMerchantPlaceId = ctx.params.merchantPlaceId.split('-');
-        let uriPlacesIds;
-        [uriMerchantId, uriPlacesIds] = parsedMerchantPlaceId;
-        validatePlace(placesIds, uriPlacesIds);
+        [uriMerchantId, uriPlaceId] = ctx.params.merchantPlaceId.split('-');
     } else {
         uriMerchantId = ctx.params.merchantId;
+        uriPlaceId = ctx.params.placeId;
     }
-
+    if (uriPlaceId) {
+        validatePlace(placesIds, uriPlaceId);
+    }
     validateMerchant(merchantId, uriMerchantId);
     await next();
 };
@@ -223,5 +224,5 @@ exports.authorizeUser = async function (
     const { merchantId: tokenMerchantId, placesIds } = permissionScope[2];
     if (placeId) validatePlace(placesIds, placeId);
     validateMerchant(tokenMerchantId, merchantId);
-    if (permissions) checkAtLeastOnePermissions(tokenPermissions, permissions);
+    if (permissions) checkAtLeastOnePermission(tokenPermissions, permissions);
 };
