@@ -179,7 +179,7 @@ describe('JWT authorization and permission validation', () => {
 
         assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
     });
-    it.only('should validate permissions on index 0', async () => {
+    it('should validate permissions on index 0', async () => {
         const signedToken = jwtTokenSign(createCustomScope(defaultMerchantId, 'A00'));
         const response = await fetch.json(`http://127.0.0.1:${port}/zeroIndexPermission`,
             {
