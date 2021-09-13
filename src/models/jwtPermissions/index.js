@@ -3,8 +3,7 @@ const { JWTVerifier } = require('@storyous/storyous-jwt');
 const fs = require('fs');
 const path = require('path');
 const config = require('../../../lib/config');
-// eslint-disable-next-line import/no-unresolved
-const { permissionHelper, fetch } = require('../..');
+const { permissionHelper, fetch } = require('../../../lib');
 const {
     NotSufficientPermissions, InvalidToken, ExpiredToken, UserNotAuthorised, NotAuthorizedForPlace
 } = require('./customErrors');

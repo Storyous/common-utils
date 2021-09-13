@@ -64,7 +64,7 @@ const startServerWithToken = ({ publicKeyUrl }) => {
     server = app.listen(port);
 };
 
-describe.only('JWT authorization', () => {
+describe('JWT authorization', () => {
     beforeEach(() => startServerWithToken({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }));
     afterEach(async () => server.close());
     it('should decode token', async () => {
