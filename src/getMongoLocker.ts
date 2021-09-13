@@ -53,7 +53,7 @@ export default async (collection: Collection) => {
                     { lockId, expiresAt: new Date(now.getTime() + expireIn) },
                     { upsert: true }
                 );
-            } catch (err) {
+            } catch (err:any) {
                 if (mongoErrorCodes.DUPLICATE_KEY.includes(err.code)) {
                     throw AppError.concurrentRequest('The lock is already acquired.');
                 }

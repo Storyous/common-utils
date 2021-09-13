@@ -10,7 +10,7 @@ const errHandler = async function (ctx: any, next: Function) {
 
         await next();
 
-    } catch (originalError) {
+    } catch (originalError:any) {
 
         let err: any = originalError;
 

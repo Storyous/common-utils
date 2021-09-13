@@ -82,7 +82,6 @@ const requestValidator = {
         return value;
     },
 
-
     /**
      *
      * @param {*} value
@@ -110,7 +109,6 @@ const requestValidator = {
 
         return defaultValue;
     },
-
 
     /**
      *
@@ -220,7 +218,6 @@ const requestValidator = {
      */
     object (value, defaultValue) {
 
-
         if (typeof value === 'object' && value !== null && !(value instanceof Array)) {
             return value;
 
@@ -251,7 +248,6 @@ const requestValidator = {
             throw AppError.badRequest(`Field \`${property}\` ${(ofObject || '')} should be filled`);
         }
     },
-
 
     /**
      *

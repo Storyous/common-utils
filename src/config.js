@@ -1,8 +1,6 @@
 'use strict';
 
-
 const configuration = {
-
 
     /* CONSTANTS */
     DEVELOPMENT: 'development',
@@ -13,7 +11,6 @@ const configuration = {
     _initialized: false,
 
     production: false,
-
 
     /**
      * System environment
