@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 // eslint-disable-next-line import/extensions
 const config = require('../../config.js');
-// eslint-disable-next-line import/extensions
-const { permissionHelper, fetch } = require('../..');
+// eslint-disable-next-line import/extensions,import/no-unresolved
+const { permissionHelper, fetch } = require('../../index');
 const {
     NotSufficientPermissions, InvalidToken, ExpiredToken, UserNotAuthorised, NotAuthorizedForPlace
 } = require('./customErrors');
