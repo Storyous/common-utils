@@ -40,7 +40,13 @@ function decodePermissions (permissions) {
     return permissionHelper.decodeData(permissions);
 }
 
-const getScope = (token, scope = PERMISSION_SCOPE) => token.scopes.find((element) => element[0] === scope);
+const getScope = (token, scope = PERMISSION_SCOPE) => {
+    const selectedScope = token.scopes.find((i) => i[0] === scope);
+    if (!selectedScope) {
+        throw new InvalidToken('Missing scope.');
+    }
+    return selectedScope;
+};
 
 /**
  *
@@ -111,19 +117,19 @@ const checkPermissions = (tokenPermissions, permissions) => {
  */
 exports.checkPermissionsMiddleWare = (permissions) => async (ctx, next) => {
     permissions = typeof permissions !== 'object' ? [permissions] : permissions;
-    const tokenPermissions = getScope(ctx.state.jwtPayload, PERMISSION_SCOPE)[1];
+    const tokenPermissions = getScope(ctx.state.jwtPayload)[1];
     checkPermissions(tokenPermissions, permissions);
     await next();
 };
 /**
  *
  * @param {string} tokenPermissions
- * @param {number[]|number} permissions
+ * @param {number[]} permissions
  */
 const checkAtLeastOnePermission = (tokenPermissions, permissions) => {
     const decodedPermissions = decodePermissions(tokenPermissions);
     const validPermission = permissions.find((i) => decodedPermissions[i]);
-    if (!validPermission) {
+    if (!validPermission && validPermission !== 0) {
         throw new NotSufficientPermissions(permissions);
     }
 };
@@ -134,7 +140,7 @@ const checkAtLeastOnePermission = (tokenPermissions, permissions) => {
  */
 exports.checkAtLeastOnePermissionMiddleWare = (permissions) => async (ctx, next) => {
     permissions = typeof permissions !== 'object' ? [permissions] : permissions;
-    const tokenPermissions = getScope(ctx.state.jwtPayload, PERMISSION_SCOPE)[1];
+    const tokenPermissions = getScope(ctx.state.jwtPayload)[1];
     checkAtLeastOnePermission(tokenPermissions, permissions);
     await next();
 };
@@ -187,7 +193,7 @@ const validatePlace = (tokenPlaceIds, placeId) => {
  */
 exports.validateMerchantMiddleware = async (ctx, next) => {
     const { jwtPayload } = ctx.state;
-    const permissionScope = getScope(jwtPayload, PERMISSION_SCOPE);
+    const permissionScope = getScope(jwtPayload);
     const { merchantId, placesIds } = permissionScope[2];
     let uriMerchantId;
     let uriPlaceId;
@@ -216,13 +222,21 @@ exports.validateMerchantMiddleware = async (ctx, next) => {
  * @returns {Promise<void>}
  */
 exports.authorizeUser = async function (
-    token, merchantId, { publicKeyUrl = _publicKeyUrl, placeId = null, permissions } = {}
+    token, {
+        merchantId, publicKeyUrl = _publicKeyUrl, placeId = null, permissions
+    } = {}
 ) {
     const payload = await validateJwt(token, publicKeyUrl);
-    const permissionScope = getScope(payload, PERMISSION_SCOPE);
+    const permissionScope = getScope(payload);
     const tokenPermissions = permissionScope[1];
     const { merchantId: tokenMerchantId, placesIds } = permissionScope[2];
-    if (placeId) validatePlace(placesIds, placeId);
-    validateMerchant(tokenMerchantId, merchantId);
-    if (permissions) checkAtLeastOnePermission(tokenPermissions, permissions);
+    if (placeId) {
+        validatePlace(placesIds, placeId);
+    }
+    if (merchantId) {
+        validateMerchant(tokenMerchantId, merchantId);
+    }
+    if (permissions) {
+        checkAtLeastOnePermission(tokenPermissions, permissions);
+    }
 };

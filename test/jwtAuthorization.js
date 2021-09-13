@@ -12,7 +12,16 @@ const _ = require('lodash');
 const JWTMockServer = require('./JWTMockServer');
 const { jwtPermissions, fetch } = require('../lib');
 const {
-    scopes, defaultMerchantId, mockPayload, restrictions, expectedPayload, defaultPlaceId, extendedScopes, extendedExpectedPayload
+    defaultScopes,
+    defaultMerchantId,
+    mockPayload,
+    mockPlaceIds,
+    restrictions,
+    expectedPayload,
+    defaultPlaceId,
+    extendedScopes,
+    extendedExpectedPayload,
+    createCustomScope
 } = require('./JWTAuthorizationMockData');
 
 const {
@@ -28,7 +37,7 @@ let app;
 let router;
 
 const issuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', privateKey }, { expiresInSec: 3600 });
-const jwtTokenSign = (payload) => issuer.createToken(payload, scopes);
+const jwtTokenSign = (_scopes) => issuer.createToken(mockPayload, _scopes);
 
 const errorCatchingMiddleware = async (ctx, next) => {
     try {
@@ -57,7 +66,7 @@ describe('JWT authorization', () => {
     beforeEach(() => startServerWithToken({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }));
     afterEach(async () => server.close());
     it('should decode token', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
                 method: 'get',
@@ -70,7 +79,7 @@ describe('JWT authorization', () => {
 
     });
     it('should fail decode token with invalid publicTesting key', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
         await server.close();
         startServerWithToken({ publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey' });
 
@@ -88,7 +97,7 @@ describe('JWT authorization', () => {
 
     it('should fail decode token with different issuer', async () => {
         const mockIssuer = new JWTIssuer({ issuer: 'mockUser', privateKey });
-        const signedToken = mockIssuer.createToken(mockPayload, scopes);
+        const signedToken = mockIssuer.createToken(mockPayload, defaultScopes);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
@@ -103,7 +112,7 @@ describe('JWT authorization', () => {
 
     it('should fail decode expired token', async () => {
         const expiredIssuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', expiresInSec: 0, privateKey });
-        const signedToken = expiredIssuer.createToken(mockPayload, scopes);
+        const signedToken = expiredIssuer.createToken(mockPayload, defaultScopes);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
@@ -142,6 +151,15 @@ describe('JWT authorization and permission validation', () => {
                 ctx.status = 200;
             }
         );
+        router.get('/zeroIndexPermission', validateJwtTokenMiddleware({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }),
+            checkAtLeastOnePermissionMiddleWare(0),
+            (ctx) => {
+                ctx.body = {
+                    jwtPayload: ctx.state.jwtPayload
+                };
+                ctx.status = 200;
+            }
+        );
         app.use(router.routes());
         server = app.listen(port);
     });
@@ -149,7 +167,7 @@ describe('JWT authorization and permission validation', () => {
     after(async () => server.close());
 
     it('should validate permissions', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
                 method: 'get',
@@ -161,7 +179,33 @@ describe('JWT authorization and permission validation', () => {
 
         assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedPayload);
     });
+    it.only('should validate permissions on index 0', async () => {
+        const signedToken = jwtTokenSign(createCustomScope(defaultMerchantId, 'A00'));
+        const response = await fetch.json(`http://127.0.0.1:${port}/zeroIndexPermission`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
 
+        const expectedResponse = {
+            ...expectedPayload,
+            scopes:
+                [
+                    [
+                        'perms',
+                        'A00',
+                        {
+                            merchantId: '123456789abc',
+                            placesIds: mockPlaceIds
+                        }
+                    ]
+                ]
+        };
+        assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), expectedResponse);
+    });
     it('should fail on invalid permissions', async () => {
         const invalidPermissionScope = [new Scope(
             'perms',
@@ -209,7 +253,7 @@ describe('JWT authorization and strict permission validation', () => {
     after(async () => server.close());
 
     it('should validate permissions', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/`,
             {
@@ -286,7 +330,7 @@ describe('JWT authorization and merchant validation', () => {
     after(async () => server.close());
 
     it('should validate merchant', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/${defaultMerchantId}`,
             {
@@ -300,7 +344,7 @@ describe('JWT authorization and merchant validation', () => {
     });
 
     it('should fail on invalid merchantId', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
         const invalidMerchantId = '1234567890abcd';
 
         const response = await fetch.json(`http://127.0.0.1:${port}/${invalidMerchantId}`,
@@ -319,10 +363,30 @@ describe('JWT authorization and merchant validation', () => {
         });
     });
 
-    it('should validate placeId', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+    it('should fail on missing scope', async () => {
+        const signedToken = jwtTokenSign(createCustomScope(defaultMerchantId, '00F', 'invalidScope'));
 
-        const response = await fetch.json(`http://127.0.0.1:${port}/merchantPlace/${defaultMerchantId}-${defaultPlaceId}`,
+        const response = await fetch.json(`http://127.0.0.1:${port}/${defaultMerchantId}`,
+            {
+                method: 'get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `"Bearer" ${signedToken}`
+                }
+            });
+        assert.deepStrictEqual(response, {
+            error: {
+                message: 'Token is not valid.',
+                code: 401
+            }
+        });
+    });
+
+    it('should validate placeId', async () => {
+        const signedToken = jwtTokenSign(defaultScopes);
+
+        const response = await fetch.json(
+            `http://127.0.0.1:${port}/merchantPlace/${defaultMerchantId}-${defaultPlaceId}`,
             {
                 method: 'get',
                 headers: {
@@ -334,7 +398,7 @@ describe('JWT authorization and merchant validation', () => {
     });
 
     it('should validate placeId', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
 
         const response = await fetch.json(`http://127.0.0.1:${port}/placeId/${defaultMerchantId}/${defaultPlaceId}`,
             {
@@ -361,7 +425,7 @@ describe('JWT authorization and merchant validation', () => {
         assert.deepStrictEqual(_.omit(response.jwtPayload, 'iat'), extendedExpectedPayload);
     });
     it('should fail on invalid merchantPlaceId', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
         const invalidPlaceId = '12345kgfkd';
         const response = await fetch.json(`http://127.0.0.1:${port}/merchantPlace/${defaultMerchantId}-${invalidPlaceId}`,
             {
@@ -379,7 +443,7 @@ describe('JWT authorization and merchant validation', () => {
         });
     });
     it('should fail on invalid placeId', async () => {
-        const signedToken = jwtTokenSign(mockPayload);
+        const signedToken = jwtTokenSign(defaultScopes);
         const invalidPlaceId = '12345kgfkd';
         const response = await fetch.json(`http://127.0.0.1:${port}/placeId/${defaultMerchantId}/${invalidPlaceId}`,
             {
@@ -398,15 +462,18 @@ describe('JWT authorization and merchant validation', () => {
     });
 });
 describe('test authorization function', () => {
-    const signedToken = jwtTokenSign(mockPayload);
+    const signedToken = jwtTokenSign(defaultScopes);
 
     it('should validate', async () => {
         let err = null;
         try {
             await authorizeUser(
                 signedToken,
-                defaultMerchantId,
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9] });
+                {
+                    merchantId: defaultMerchantId,
+                    publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey',
+                    permissions: [8, 9]
+                });
         } catch (e) {
             err = e;
         }
@@ -416,12 +483,15 @@ describe('test authorization function', () => {
     it('should fail on expired token', async () => {
         let err = null;
         const expiredIssuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', expiresInSec: 0, privateKey });
-        const expiredToken = expiredIssuer.createToken(mockPayload, scopes);
+        const expiredToken = expiredIssuer.createToken(mockPayload, defaultScopes);
         try {
             await authorizeUser(
                 expiredToken,
-                defaultMerchantId,
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9] });
+                {
+                    merchantId: defaultMerchantId,
+                    publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey',
+                    permissions: [8, 9]
+                });
         } catch (e) {
             err = e;
         }
@@ -433,12 +503,15 @@ describe('test authorization function', () => {
     it('should fail on invalid token issuer', async () => {
         let err = null;
         const mockIssuer = new JWTIssuer({ issuer: 'mockUser', privateKey });
-        const invalidIssuerToken = mockIssuer.createToken(mockPayload, scopes);
+        const invalidIssuerToken = mockIssuer.createToken(mockPayload, defaultScopes);
         try {
             await authorizeUser(
                 invalidIssuerToken,
-                defaultMerchantId,
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9] });
+                {
+                    merchantId: defaultMerchantId,
+                    publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey',
+                    permissions: [8, 9]
+                });
         } catch (e) {
             err = e;
         }
@@ -448,12 +521,15 @@ describe('test authorization function', () => {
     });
     it('should fail on invalid public key', async () => {
         let err = null;
-        const invalidIssuerToken = issuer.createToken(mockPayload, scopes);
+        const invalidIssuerToken = issuer.createToken(mockPayload, defaultScopes);
         try {
             await authorizeUser(
                 invalidIssuerToken,
-                defaultMerchantId,
-                { publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey', permissions: [8, 9] });
+                {
+                    merchantId: defaultMerchantId,
+                    publicKeyUrl: 'http://127.0.0.1:3010/getInvalidPublicKey',
+                    permissions: [8, 9]
+                });
         } catch (e) {
             err = e;
         }
@@ -468,8 +544,11 @@ describe('test authorization function', () => {
         try {
             await authorizeUser(
                 signedToken,
-                invalidMerchant,
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9] });
+                {
+                    merchantId: invalidMerchant,
+                    publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey',
+                    permissions: [8, 9]
+                });
         } catch (e) {
             err = e;
         }
@@ -483,8 +562,12 @@ describe('test authorization function', () => {
         try {
             await authorizeUser(
                 signedToken,
-                defaultMerchantId,
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [8, 9], placeId: invalidPlaceId });
+                {
+                    merchantId: defaultMerchantId,
+                    publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey',
+                    permissions: [8, 9],
+                    placeId: invalidPlaceId
+                });
         } catch (e) {
             err = e;
         }
@@ -497,8 +580,11 @@ describe('test authorization function', () => {
         try {
             await authorizeUser(
                 signedToken,
-                defaultMerchantId,
-                { publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey', permissions: [1, 2] });
+                {
+                    merchantId: defaultMerchantId,
+                    publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey',
+                    permissions: [1, 2]
+                });
         } catch (e) {
             err = e;
         }

@@ -6,24 +6,19 @@ exports.mockPayload = {
     deviceId: '5bfec53bef2ca200131988ab',
     personId: '5bfec53bef2ca200131988aa'
 };
-exports.defaultMerchantId = '123456789abc';
-exports.defaultPlaceId = '5bfec53bef2ca200131988ac';
-const merchantRestriction = new Restriction('merchantId', exports.defaultMerchantId);
-const placeRestrictions = new Restriction('placesIds', [
+exports.mockPlaceIds = [
     '5bfec53bef2ca200131988ac',
     '5bfec53bef2ca200131988aa',
     '5bfec53bef2ca200131988ab',
     '5bfec53bef2ca200131988au'
-]);
-const placeRestrictionExtended = new Restriction('placesIds', [
-    '5bfec53bef2ca200131988ac',
-    '5bfec53bef2ca200131988aa',
-    '5bfec53bef2ca200131988ab',
-    '5bfec53bef2ca200131988au',
-    '*'
-]);
+];
+exports.defaultMerchantId = '123456789abc';
+exports.defaultPlaceId = '5bfec53bef2ca200131988ac';
+const merchantRestriction = new Restriction('merchantId', exports.defaultMerchantId);
+const placeRestrictions = new Restriction('placesIds', exports.mockPlaceIds);
+const placeRestrictionExtended = new Restriction('placesIds', [...exports.mockPlaceIds, '*']);
 exports.restrictions = [merchantRestriction, placeRestrictions];
-exports.scopes = [new Scope(
+exports.defaultScopes = [new Scope(
     'perms',
     exports.restrictions,
     '00F'
@@ -76,3 +71,10 @@ exports.extendedExpectedPayload = {
     ],
     iss: 'Storyous s.r.o.'
 };
+exports.createCustomScope = (merchantId, permissions = '0000', resource = 'perms') => [
+    new Scope(
+        resource,
+        [new Restriction('merchantId', merchantId), placeRestrictions],
+        permissions
+    )
+];
