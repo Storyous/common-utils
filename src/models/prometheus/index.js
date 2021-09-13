@@ -8,7 +8,6 @@ const client = require('prom-client');
 const register = require('./register');
 const prometheusMiddlewares = require('./prometheusMiddlewares');
 
-
 const prometheus = {
 
     _baseUrl: null,

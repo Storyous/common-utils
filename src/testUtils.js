@@ -85,7 +85,6 @@ const testUtils = {
         await client.close();
     }
 
-
 };
 
 module.exports = testUtils;

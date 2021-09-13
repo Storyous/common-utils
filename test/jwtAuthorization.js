@@ -1,4 +1,5 @@
 'use strict';
+require('./config'); // eslint-disable-line import/order
 const {
     describe,
     it, beforeEach, afterEach, before, after
@@ -9,6 +10,7 @@ const koaBody = require('koa-body');
 const routerFactory = require('koa-router');
 const { JWTIssuer, Scope } = require('@storyous/storyous-jwt');
 const _ = require('lodash');
+
 const JWTMockServer = require('./JWTMockServer');
 const { jwtPermissions, fetch } = require('../lib');
 const {
@@ -62,7 +64,7 @@ const startServerWithToken = ({ publicKeyUrl }) => {
     server = app.listen(port);
 };
 
-describe('JWT authorization', () => {
+describe.only('JWT authorization', () => {
     beforeEach(() => startServerWithToken({ publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey' }));
     afterEach(async () => server.close());
     it('should decode token', async () => {
