@@ -30,6 +30,22 @@ function validateBooleanArray (booleanArray:boolean[]) {
         throw new InvalidInputError(booleanArray);
     }
 }
+
+/**
+ *
+ * @param {any[]} list
+ ** @returns {any[]}
+ */
+function padArray(list:any[]) {
+    const moduloLength = list.length%8
+    if(moduloLength === 0){
+        return list
+    } else {
+        const fillingArray = Array(8-moduloLength).fill(false)
+        return [...list,...fillingArray]
+    }
+}
+
 /**
  *
  * @param {boolean[]} booleanArray
@@ -37,11 +53,10 @@ function validateBooleanArray (booleanArray:boolean[]) {
  */
 function encodeData (booleanArray:boolean[]) {
     validateBooleanArray(booleanArray);
-    return _.chunk(booleanArray, 4)
+    return _.chunk(padArray(booleanArray), 4)
         .map((chunk) => {
             const binaryString = chunk.map((bool) => (bool ? '1' : '0'))
                 .join('')
-                .padEnd(4, '0');
             return parseInt(binaryString, 2)
                 .toString(16);
         })
