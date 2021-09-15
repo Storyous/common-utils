@@ -3,7 +3,7 @@ const assert = require('assert');
 const {
     validArrayInputs, invalidArrayInputs, expectedHexResult, expectedArrayResult, invalidHexInputs, validHexInput
 } = require('./permissionsMockData');
-const { encodeData, decodeData } = require("../lib/models/permissions");
+const { encodeData, decodeData } = require('../lib/models/permissions');
 
 describe('Encoding functionality', () => {
     describe('Testing encoding function', () => {
@@ -18,7 +18,7 @@ describe('Encoding functionality', () => {
             invalidArrayInputs.forEach((item) => {
                 assert.throws(() => encodeData(item), {
                     message: 'Invalid input',
-                    name: 'Error',
+                    name: 'Error'
                 });
             });
         });
@@ -36,7 +36,7 @@ describe('Encoding functionality', () => {
             invalidHexInputs.forEach((item) => {
                 assert.throws(() => decodeData(item), {
                     message: 'Invalid input',
-                    name: 'Error',
+                    name: 'Error'
                 });
             });
         });
