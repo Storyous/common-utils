@@ -5,7 +5,6 @@ const assert = require('assert');
 const crypto = require('crypto');
 const Secrets = require('../lib/secrets');
 
-
 describe('secrets', () => {
 
     it('should be able to encrypt secret', () => {

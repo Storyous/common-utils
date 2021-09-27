@@ -9,7 +9,6 @@ const { times } = require('lodash');
 const getMongoCachedJSONFetcher = require('../lib/getMongoCachedJSONFetcher');
 const getMongoClient = require('./getMongoClient');
 
-
 describe('getMongoCachedJSONFetcher', () => {
 
     function delay (milliseconds) {
@@ -56,7 +55,6 @@ describe('getMongoCachedJSONFetcher', () => {
         fileContent = { version: 1 };
     });
 
-
     it('should fail when the first load fails', async () => {
 
         const fetchTheJson = await getMongoCachedJSONFetcher(collection, { url });
@@ -85,7 +83,6 @@ describe('getMongoCachedJSONFetcher', () => {
                     });
                 }
             );
-
 
         mockedFileServer.runAllCheckers();
 
@@ -370,7 +367,6 @@ describe('getMongoCachedJSONFetcher', () => {
                 content: transformedContent, etag: getETagByContent(fileContent), isCacheFresh: true, etagMatch: false
             });
 
-
             mockedFileServer.fileRoute.handleNext((ctx) => {
                 ctx.body = updatedFile;
             });
@@ -518,7 +514,6 @@ describe('getMongoCachedJSONFetcher', () => {
         });
 
         it('should not call transform function if returned etag matches', async () => {
-
 
             const transformedContent = { mappedFile: true };
 

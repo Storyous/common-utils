@@ -14,7 +14,6 @@ const {
     token, dir: targetDir, project, resource: resourceName
 } = program;
 
-
 const projectResourcesUrl = `https://api.lingohub.com/v1/storyous/projects/${project}/resources`;
 
 fs.mkdirSync(targetDir, { recursive: true });

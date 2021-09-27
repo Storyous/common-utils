@@ -20,14 +20,20 @@ const sessionIdHeader = 'x-session-id';
 // having it short allows rewriting it by hand from i.e. image or some graphs
 const correlationIdLength = 6;
 
+function getCorrelationSessionId(reqOrCtx) {
+    const correlationId = reqOrCtx.get(correlationIdHeader) || generateRandomAlphanumeric(correlationIdLength);
+    const sessionId = reqOrCtx.get(sessionIdHeader) || reqOrCtx.get('x-device-id') || reqOrCtx.get('deviceid') || null;
+
+    return { correlationId, sessionId }
+}
+
 class ContextFactory {
     static getKoaMiddleware () {
         const namespace = this.createNamespace();
 
         return async function (ctx, next) {
             await new Promise(namespace.bind(function (resolve, reject) {
-                const correlationId = ctx.get(correlationIdHeader) || generateRandomAlphanumeric(correlationIdLength);
-                const sessionId = ctx.get(sessionIdHeader) || ctx.get('x-device-id') || ctx.get('deviceid') || null;
+                const { correlationId, sessionId } = getCorrelationSessionId(ctx);
                 ContextFactory.initializeCorrelationSessionId(namespace, correlationId, sessionId);
 
                 ctx.set(correlationIdHeader, correlationId);
@@ -45,23 +51,26 @@ class ContextFactory {
         };
     }
 
-    // static getExpressMiddleware () {
-    //     const namespace = this.createNamespace();
-    //
-    //     return (req, res, next) => {
-    //         namespace.bindEmitter(req);
-    //         namespace.bindEmitter(res);
-    //
-    //         namespace.run(() => {
-    //             namespace.set(
-    //                 'correlationId',
-    //                 req.headers[correlationIdHeader] || generateRandomAlphanumeric(correlationIdLength)
-    //             );
-    //
-    //             next();
-    //         });
-    //     };
-    // }
+    static getExpressMiddleware () {
+        const namespace = this.createNamespace();
+
+        return (req, res, next) => {
+            namespace.bindEmitter(req);
+            namespace.bindEmitter(res);
+
+            const { correlationId, sessionId } = getCorrelationSessionId(req);
+            res.setHeader('correlationId', correlationId);
+            if (sessionId) {
+                res.setHeader('sessionId', sessionId);
+            }
+
+            namespace.run(() => {
+                ContextFactory.initializeCorrelationSessionId(namespace, correlationId, sessionId);
+
+                next();
+            });
+        };
+    }
 
     /**
      * This will create new context over promise-chain
@@ -138,7 +147,8 @@ class ContextFactory {
 
     static getCorrelationId () {
         if (!this.getContextStorage().correlationId) {
-            return 'notdefined';
+            // to make logs shorter when this is not used
+            return '?';
         }
         return this.getContextStorage().correlationId;
     }

@@ -286,6 +286,10 @@ class LoggerWrapper {
         return clsAdapter.getKoaMiddleware();
     }
 
+    initExpress(): Function {
+        return clsAdapter.getExpressMiddleware();
+    }
+
     basicLogMiddleware({
                            fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
         squashByUrls = []
