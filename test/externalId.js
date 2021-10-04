@@ -4,7 +4,6 @@ const { it, describe } = require('mocha');
 const assert = require('assert');
 const ID = require('../lib/externalId');
 
-
 describe('External Ids', () => {
 
     it('should be able to encode/decode external id', () => {
@@ -14,7 +13,6 @@ describe('External Ids', () => {
 
         const encoded = ID.encode(expectedPlain);
         assert.equal(encoded, expectedEncoded);
-
 
         const decoded = ID.decode(encoded);
         assert.equal(decoded, expectedPlain);
@@ -27,7 +25,6 @@ describe('External Ids', () => {
 
         const encoded = ID.encode(expectedPlain, 'p');
         assert.equal(encoded, expectedEncoded);
-
 
         const decoded = ID.decode(encoded);
         assert.equal(decoded, expectedPlain);

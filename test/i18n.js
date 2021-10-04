@@ -3,7 +3,6 @@ const { describe, it } = require('mocha');
 const assert = require('assert');
 const { i18n } = require('../lib');
 
-
 describe('i18n', () => {
 
     it('should translate a string', async () => {
@@ -15,6 +14,5 @@ describe('i18n', () => {
             'czech aa'
         );
     });
-
 
 });

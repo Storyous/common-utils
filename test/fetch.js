@@ -9,7 +9,6 @@ const assert = require('assert');
 
 const fetch = require('../lib/fetch');
 
-
 describe('fetch', () => {
 
     const url = 'http://127.0.0.1:3939/endpoint';
@@ -34,7 +33,7 @@ describe('fetch', () => {
         const response = await fetch(url);
         assert.deepStrictEqual(await response.json(), { ok: true });
         const headers = response.headers.raw();
-        assert.deepStrictEqual(headers['x-correlation-id'], ['notdefined']);
+        assert.deepStrictEqual(headers['x-correlation-id'], ['?']);
     });
 
     it('should rejects with proper meta', async () => {

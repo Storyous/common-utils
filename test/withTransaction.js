@@ -5,7 +5,6 @@ const assert = require('assert').strict;
 require('./getMongoClient');
 const { getCollection, withTransaction } = require('../lib');
 
-
 describe('withTransaction', () => {
 
     let testCollection;
@@ -62,7 +61,6 @@ describe('withTransaction', () => {
             );
 
             throw error;
-
 
         }), error);
 
