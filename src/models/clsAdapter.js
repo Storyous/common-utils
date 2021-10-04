@@ -59,9 +59,9 @@ class ContextFactory {
             namespace.bindEmitter(res);
 
             const { correlationId, sessionId } = getCorrelationSessionId(req);
-            res.setHeader('correlationId', correlationId);
+            res.setHeader(correlationIdHeader, correlationId);
             if (sessionId) {
-                res.setHeader('sessionId', sessionId);
+                res.setHeader(sessionIdHeader, sessionId);
             }
 
             namespace.run(() => {
