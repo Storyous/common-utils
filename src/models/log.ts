@@ -63,6 +63,8 @@ function _findAndHidePassword(arg: { body: { password: any; currentPassword: any
 
 const logger = createLogger({
     format: format.combine(
+        // At this moment the logs are processed and instance of error is not passed to this
+        // Similar logic of gathering info.stack is elsewhere, however some uncaught errors can be run through this
         format((info: { stack: any; }) => {
             if (isError(info)) {
                 return {
@@ -290,6 +292,11 @@ class LoggerWrapper {
         return clsAdapter.getExpressMiddleware();
     }
 
+    /**
+     * If used at the beginning of koa middlewares, it will log important request and response information
+     * @param {string[]} fullLogMethods Which methods should have more logs
+     * @param {string[]} squashByUrls Which URL pattern should not create log for every event, but just squash it for each i.e. 10 seconds
+     */
     basicLogMiddleware({
                            fullLogMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
         squashByUrls = []
@@ -362,6 +369,11 @@ class LoggerWrapper {
         };
     }
 
+    /**
+     * Mainly for test - logs also request and response body for easier debugging
+     * @param {boolean} debug
+     * @param {string[]} ignoreUrls
+     */
     debugLogging(debug = false, ignoreUrls = ['/status']) {
         return async (ctx: Context, next: Function) => {
             if (!debug || ignoreUrls.includes(ctx.url)) {
@@ -416,7 +428,7 @@ class LoggerWrapper {
     }
 
     /**
-     * @param {Function} promiseFactory Function that creates promise you want to use bind for
+     * @param {Function} promiseFactory Function that creates promise where all chained promises will have correlationId
      */
     async createContextForPromise(promiseFactory: Function) {
         return clsAdapter.bindToPromiseFactory(promiseFactory);
@@ -448,6 +460,10 @@ class LoggerWrapper {
 
         if (obj.stack) {
             thisObj.stack = obj.stack;
+        }
+
+        if (obj.message) {
+            thisObj.message = obj.message;
         }
 
         return thisObj;
