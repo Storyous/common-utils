@@ -29,25 +29,31 @@ class MigrationsStore {
     }
 
     save (set: Object, done: DoneCallback) {
-        log.info('Migration SET', set)
-        const objToUpdate: any = _.pick(set, ['lastRun', 'migrations']);
-        if (this.safeMigration) {
-            checkValidMigrations(objToUpdate);
+        try {
+            log.info('Migration SET', set)
+            const objToUpdate: any = _.pick(set, ['lastRun', 'migrations']);
+            if (this.safeMigration) {
+                checkValidMigrations(objToUpdate);
 
-            const numOfValidMigrations = objToUpdate.migrations
-                .reduce((prev: number, cur: { timestamp: any; }) => cur.timestamp? prev + 1 : prev, 0);
+                const numOfValidMigrations = objToUpdate.migrations
+                    .reduce((prev: number, cur: { timestamp: any; }) => cur.timestamp ? prev + 1 : prev, 0);
 
-            // If all migrations are renewed=without timestamp (beside the first one that is trying to be applied)
-            // There can be something wrong
-            if (objToUpdate.migrations.length >= 3 && numOfValidMigrations <= 1) {
-                log.error(safeMigrationMsg);
-                throw new Error(safeMigrationMsg);
+                // If all migrations are renewed=without timestamp (beside the first one that is trying to be applied)
+                // There can be something wrong
+                if (objToUpdate.migrations.length >= 3 && numOfValidMigrations <= 1) {
+                    log.error(safeMigrationMsg);
+                    throw new Error(safeMigrationMsg);
+                }
             }
-        }
 
-        appData.updateDocument(DOCUMENT_ID, { $set: objToUpdate }, true)
-            .then((state) => { done(null, state); })
-            .catch(done);
+            appData.updateDocument(DOCUMENT_ID, {$set: objToUpdate}, true)
+                .then((state) => {
+                    done(null, state);
+                })
+                .catch(done);
+        } catch (err) {
+            done(err);
+        }
     }
 
     load (done: DoneCallback) {
