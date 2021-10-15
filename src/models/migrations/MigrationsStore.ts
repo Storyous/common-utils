@@ -46,7 +46,8 @@ class MigrationsStore {
         }
 
         appData.updateDocument(DOCUMENT_ID, { $set: objToUpdate }, true)
-            .then((state) => { done(null, state); }, done)
+            .then((state) => { done(null, state); })
+            .catch(done);
     }
 
     load (done: DoneCallback) {
@@ -60,7 +61,8 @@ class MigrationsStore {
                     lastRun: null,
                     migrations: []
                 });
-            }, done)
+            })
+            .catch(done);
     }
 }
 
