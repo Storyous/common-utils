@@ -14,7 +14,6 @@ const safeMigrationMsg = 'safeMigration is true, we do not allow empty migration
 function checkValidMigrations(objWithMigrations: { migrations: any; }) {
     if (
         !objWithMigrations ||
-        _.isNull(objWithMigrations.migrations) ||
         _.isEmpty(objWithMigrations.migrations) ||
         !_.isArray(objWithMigrations.migrations)) {
         log.error(safeMigrationMsg);
@@ -48,7 +47,6 @@ class MigrationsStore {
 
         appData.updateDocument(DOCUMENT_ID, { $set: objToUpdate }, true)
             .then((state) => { done(null, state); }, done)
-            .catch(done);
     }
 
     load (done: DoneCallback) {
@@ -63,7 +61,6 @@ class MigrationsStore {
                     migrations: []
                 });
             }, done)
-            .catch(done);
     }
 }
 
