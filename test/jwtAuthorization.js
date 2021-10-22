@@ -482,6 +482,27 @@ describe('test authorization function', () => {
         assert(!err);
     });
 
+    it('should fail on invalid deviceId', async () => {
+        let err = null;
+        const invalidDevice = '5bfec53bef2ca200131988zz';
+        try {
+            await authorizeUser(
+                signedToken,
+                {
+                    merchantId: defaultMerchantId,
+                    deviceId: invalidDevice,
+                    publicKeyUrl: 'http://127.0.0.1:3010/getPublicKey',
+                    permissions: [8, 9]
+                });
+        } catch (e) {
+            err = e;
+        }
+        assert(err);
+        assert.deepStrictEqual(err.message, 'Invalid device.');
+        assert.deepStrictEqual(err.code, 401);
+        assert.deepStrictEqual(err.data, { deviceId: invalidDevice });
+    });
+
     it('should fail on expired token', async () => {
         let err = null;
         const expiredIssuer = new JWTIssuer({ issuer: 'Storyous s.r.o.', expiresInSec: 0, privateKey });
@@ -555,8 +576,9 @@ describe('test authorization function', () => {
             err = e;
         }
         assert(err);
-        assert.deepStrictEqual(err.message, 'Not authorized.');
+        assert.deepStrictEqual(err.message, 'User is not authorised.');
         assert.deepStrictEqual(err.code, 401);
+        assert.deepStrictEqual(err.data, { merchantId: invalidMerchant });
     });
     it('should fail on invalid placeId', async () => {
         let err = null;
@@ -574,8 +596,9 @@ describe('test authorization function', () => {
             err = e;
         }
         assert(err);
-        assert.deepStrictEqual(err.message, 'Not authorized.');
+        assert.deepStrictEqual(err.message, 'User is not authorised for selected place.');
         assert.deepStrictEqual(err.code, 401);
+        assert.deepStrictEqual(err.data, { placeId: invalidPlaceId });
     });
     it('should fail on invalid permission', async () => {
         let err = null;

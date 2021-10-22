@@ -7,9 +7,9 @@ class UserNotAuthorised extends NotAuthorized {
      * @param {string} merchantId
      */
     constructor (merchantId) {
-        super('User is not authorised', {
-            merchantId
-        });
+        super();
+        this.message = 'User is not authorised.';
+        this.data = { merchantId };
     }
 }
 exports.UserNotAuthorised = UserNotAuthorised;

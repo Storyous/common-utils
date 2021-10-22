@@ -7,7 +7,7 @@ const config = require('../../config.js');
 // eslint-disable-next-line import/extensions,import/no-unresolved
 const { permissionHelper, fetch } = require('../../index');
 const {
-    NotSufficientPermissions, InvalidToken, ExpiredToken, UserNotAuthorised, NotAuthorizedForPlace
+    NotSufficientPermissions, InvalidToken, ExpiredToken, UserNotAuthorised, NotAuthorizedForPlace, InvalidDevice
 } = require('./customErrors');
 
 const publicKeys = {};
@@ -69,7 +69,13 @@ async function getJwt (publicKeyUrl = _publicKeyUrl) {
     return publicKeys[publicKeyUrl];
 }
 
-const validateJwt = async (jwtToken, url) => {
+/**
+ *
+ * @param {string} jwtToken
+ * @param {string|undefined} url
+ * @returns {Promise<{}>}
+ */
+const validateJwt = async (jwtToken, url = _publicKeyUrl) => {
     const publicKey = await getJwt(url);
     const verifier = new JWTVerifier({ issuer: 'Storyous s.r.o.', algorithm: 'RS256', publicKey });
     let decodedToken;
@@ -186,6 +192,14 @@ const validatePlace = (tokenPlaceIds, placeId) => {
     }
 
 };
+
+const validateDevice = (tokenDeviceId, deviceId) => {
+    if (tokenDeviceId !== deviceId) {
+        // throw new ExpiredToken();
+        throw new InvalidDevice(deviceId);
+    }
+
+};
 /**
  *
  * @param ctx
@@ -218,17 +232,18 @@ exports.validateMerchantMiddleware = async (ctx, next) => {
  * @param {number[]|number} permissions
  * @param {string|undefined} publicKeyUrl
  * @param {string|null} placeId
- * @param {string|null} placeId
+ * @param {string|undefined} deviceId
  * @param {number[]|number|undefined} permissions
  * @returns {Promise<void>}
  */
 exports.authorizeUser = async function (
     token, {
-        merchantId, publicKeyUrl = _publicKeyUrl, placeId = null, permissions
+        merchantId, publicKeyUrl = _publicKeyUrl, placeId = null, deviceId, permissions
     } = {}
 ) {
     const payload = await validateJwt(token, publicKeyUrl);
     const permissionScope = getScope(payload);
+    const tokenDeviceId = payload.deviceId;
     const tokenPermissions = permissionScope[1];
     const { merchantId: tokenMerchantId, placesIds } = permissionScope[2];
     if (placeId) {
@@ -239,5 +254,8 @@ exports.authorizeUser = async function (
     }
     if (permissions) {
         checkAtLeastOnePermission(tokenPermissions, permissions);
+    }
+    if (deviceId) {
+        validateDevice(tokenDeviceId, deviceId);
     }
 };
