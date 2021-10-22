@@ -75,7 +75,7 @@ async function getJwt (publicKeyUrl = _publicKeyUrl) {
  * @param {string|undefined} url
  * @returns {Promise<{}>}
  */
-const validateJwt = async (jwtToken, url = _publicKeyUrl) => {
+exports.validateJwt = async (jwtToken, url = _publicKeyUrl) => {
     const publicKey = await getJwt(url);
     const verifier = new JWTVerifier({ issuer: 'Storyous s.r.o.', algorithm: 'RS256', publicKey });
     let decodedToken;
@@ -103,7 +103,7 @@ const validateJwt = async (jwtToken, url = _publicKeyUrl) => {
  */
 exports.validateJwtTokenMiddleware = ({ publicKeyUrl = _publicKeyUrl } = {}) => async (ctx, next) => {
     const jwtToken = parseAuthorization(ctx.get('authorization'));
-    ctx.state.jwtPayload = await validateJwt(jwtToken, publicKeyUrl);
+    ctx.state.jwtPayload = await exports.validateJwt(jwtToken, publicKeyUrl);
     await next();
 };
 
@@ -241,7 +241,7 @@ exports.authorizeUser = async function (
         merchantId, publicKeyUrl = _publicKeyUrl, placeId = null, deviceId, permissions
     } = {}
 ) {
-    const payload = await validateJwt(token, publicKeyUrl);
+    const payload = await exports.validateJwt(token, publicKeyUrl);
     const permissionScope = getScope(payload);
     const tokenDeviceId = payload.deviceId;
     const tokenPermissions = permissionScope[1];
