@@ -7,9 +7,9 @@ class NotAuthorizedForPlace extends NotAuthorized {
      * @param {string} placeId
      */
     constructor (placeId) {
-        super('User is not authorised for selected place.', {
-            placeId
-        });
+        super();
+        this.message = 'User is not authorised for selected place.';
+        this.data = { placeId };
     }
 }
 exports.NotAuthorizedForPlace = NotAuthorizedForPlace;
