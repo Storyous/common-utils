@@ -359,7 +359,7 @@ describe('JWT authorization and merchant validation', () => {
             });
         assert.deepStrictEqual(response, {
             error: {
-                message: 'Not authorized.',
+                message: 'User is not authorised.',
                 code: 401
             }
         });
@@ -439,7 +439,7 @@ describe('JWT authorization and merchant validation', () => {
             });
         assert.deepStrictEqual(response, {
             error: {
-                message: 'Not authorized.',
+                message: 'User is not authorised for selected place.',
                 code: 401
             }
         });
@@ -457,7 +457,7 @@ describe('JWT authorization and merchant validation', () => {
             });
         assert.deepStrictEqual(response, {
             error: {
-                message: 'Not authorized.',
+                message: 'User is not authorised for selected place.',
                 code: 401
             }
         });
