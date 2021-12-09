@@ -32,7 +32,7 @@ import withTransaction from './withTransaction';
 import i18n from './i18n.js';
 import utils from './utils';
 import permissionHelper  from "./models/permissions";
-
+import jwtPermissions from "./models/jwtPermissions"
 export {
     AppError,
     concurrentTask,
@@ -64,5 +64,6 @@ export {
     runMigrations,
     usageTracker,
     utils,
-    permissionHelper
+    permissionHelper,
+    jwtPermissions
 };

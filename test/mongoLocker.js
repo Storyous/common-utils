@@ -24,7 +24,6 @@ describe('mongoLocker', () => {
         await collection.drop().catch(noop);
     });
 
-
     [
         ['default mongoLocker instance', () => mongoLocker],
         ['custom getMongoLocker', () => getMongoLocker(collection)]
@@ -177,7 +176,6 @@ describe('mongoLocker', () => {
                     expiresAt: 1
                 }
             }, 'No or wrong indexes has been created!');
-
 
             const startedAt = new Date();
             const someKey = 'someKey';

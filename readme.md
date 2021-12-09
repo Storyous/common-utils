@@ -156,6 +156,14 @@ const serviceResponse = await storyousAuthorizedFetch('https://api.storyous.com/
 Add option to squash multiple logs into one based on URL
 `app.use(log.basicLogMiddleware({ squashByUrls: ['/public/sodexo/restaurants'] }));`
 
+### 16.8.0
+Run migrations now have option safeMigration that is true by default. 
+
+For new projects you have it to set it to false to allow complete rewriting of
+array with migrations. Remove safeMigration (or set it as true) when migrations
+are successful in all envs
+```runMigrations(`${__dirname}/migrations`, {safeMigration: false});```
+
 ## MongoCachedFetcher
 
 ### Usage:  

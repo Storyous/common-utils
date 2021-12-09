@@ -1,8 +1,6 @@
 'use strict';
 
-
 const configuration = {
-
 
     /* CONSTANTS */
     DEVELOPMENT: 'development',
@@ -51,6 +49,15 @@ const configuration = {
      */
     isProduction () {
         return this.env === this.PRODUCTION;
+    },
+    /**
+     * Returns if is in testing mode
+     *
+     * @returns {boolean}
+     */
+
+    isTesting () {
+        return this.env === this.TESTING;
     },
 
     /**

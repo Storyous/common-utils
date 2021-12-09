@@ -3,7 +3,6 @@
 const AppError = require('./appError');
 const prometheusMiddlewares = require('./models/prometheus/prometheusMiddlewares');
 
-
 const middlewares = {
     getRouterAuthorizationMiddleware (routerToken) {
         return (ctx, next) => {

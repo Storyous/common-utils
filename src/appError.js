@@ -1,6 +1,5 @@
 'use strict';
 
-
 class AppError extends Error {
 
     /**
@@ -159,6 +158,5 @@ AppError.internal = (message, meta) => {
 
     return purifyStack(error);
 };
-
 
 module.exports = AppError;

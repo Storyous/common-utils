@@ -1,6 +1,5 @@
 'use strict';
 
-
 const {
     describe,
     it,
@@ -23,7 +22,6 @@ describe('storyousAuthorizedFetch', () => {
     beforeEach(async () => {
         await mongoClient.db().collection('appData').deleteMany();
     });
-
 
     const serviceUrl = 'http://127.0.0.1:3944/endpoint';
     const loginUrl = 'http://127.0.0.1:3943';
@@ -48,7 +46,6 @@ describe('storyousAuthorizedFetch', () => {
 
     const serviceServer = new MockedServer(serviceUrl);
     serviceServer.endpoint = serviceServer.get('/endpoint');
-
 
     const withResponse = (status, body) => (ctx) => {
         assert.strictEqual(ctx.get('authorization'), `Bearer ${lastToken}`);

@@ -9,15 +9,20 @@ const logger = log.module('migrations');
 
 /**
  * In case of fail - logs the result and returns rejected promise
+ * @param {string} directory Path to directory where migrations are
+ * @param {boolean} continueOnError If app crashes on error or continue
+ * @param {boolean} safeMigration Do not allow to rewrite all migrations with empty array
  */
-export default async function runMigrations (directory: string, { continueOnError = config.isProduction() } = {}) {
-
+export default async function runMigrations(directory: string, {
+    continueOnError = config.isProduction(),
+    safeMigration = true
+} = {}) {
     return new Promise<void>((resolve, reject) => {
         migrate.load({
-            stateStore: new MigrationsStore(),
+            stateStore: new MigrationsStore(safeMigration),
             migrationsDirectory: directory,
             filterFunction: (file: string) => file.endsWith('.js')
-        }, (err: Error|null, set: any) => {
+        }, (err: Error | null, set: any) => {
 
             if (err) {
                 log.error('Migrations did not run due to error', err);
@@ -30,7 +35,7 @@ export default async function runMigrations (directory: string, { continueOnErro
             });
 
             set.on('migration', (migration: any, direction: string) => {
-                logger.info(`Running ${direction} migration`, migration.title);
+                logger.info(`Running ${direction} migration`, {title: migration.title});
             });
 
             set.up((error?: Error) => {

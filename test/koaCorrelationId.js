@@ -11,7 +11,6 @@ const assert = require('assert');
 
 const log = require('../lib/models/log');
 
-
 const logModule = log.module('extraInfo');
 const port = 6789;
 const appName = '@storyous/common-utils';
@@ -256,7 +255,6 @@ describe('Using Koa with correlationId', () => {
         assert.strictEqual(sessionId, 'some-custom-session-id');
         assert.strictEqual(sessionId, response.headers.get('x-session-id'));
     });
-
 
     after(async () => {
         log.remove(httpWinstonTransport);
