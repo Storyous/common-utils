@@ -1,6 +1,6 @@
 {
   "name": "@storyous/common-utils",
-  "version": "16.8.2",
+  "version": "16.8.3",
   "description": "Common utils for storyous microservices",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
