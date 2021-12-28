@@ -92,19 +92,16 @@ const getKeyResolver = (cacheConfig, key, url) => {
         let notModified = false;
 
         // find meta only, we don't want to hold potentially large data in memory during the fetch
-        const meta = {
-            record: await findRecord(cacheConfig.collection, key, metaProjection),
-            fetchOptions: cacheConfig.fetchOptions
-        };
-        const metaRecord = meta.record;
+        const meta = await findRecord(cacheConfig.collection, key, metaProjection);
 
         const refreshPromise = (async () => {
-            if (metaRecord && isYoungEnough(metaRecord.fetchedAt, freshnessLimitDate)) {
+
+            if (meta && isYoungEnough(meta.fetchedAt, freshnessLimitDate)) {
                 return meta;
             }
 
             try {
-                const etag = metaRecord && metaRecord.etag;
+                const etag = meta && meta.etag;
                 const fetchResult = await doFetch(url, etag, cacheConfig.fetchFunction, cacheConfig.fetchOptions);
                 const { newContent, newEtag } = fetchResult;
                 ({ notModified } = fetchResult);
@@ -122,7 +119,7 @@ const getKeyResolver = (cacheConfig, key, url) => {
                         value: newMeta,
                         lastErrorObject: { updatedExisting }
                     } = await cacheConfig.collection.findOneAndUpdate(
-                        { _id: key, fetchedAt: metaRecord.fetchedAt },
+                        { _id: key, fetchedAt: meta.fetchedAt },
                         { $set: { fetchedAt } },
                         { returnOriginal: false, projection: metaProjection }
                     );
@@ -145,7 +142,7 @@ const getKeyResolver = (cacheConfig, key, url) => {
 
             } catch (e) {
                 cacheConfig.logError(e);
-                if (!metaRecord) {
+                if (!meta) {
                     throw e;
                 }
                 return meta;
@@ -156,11 +153,14 @@ const getKeyResolver = (cacheConfig, key, url) => {
         const refreshResult = await new Promise((resolve, reject) => {
 
             const timeoutId = setTimeout(() => {
-                cacheConfig.logError(new AppError('Loading of the content timed out.', meta));
-                if (!metaRecord) {
+                cacheConfig.logError(new AppError(
+                    'Loading of the content timed out.',
+                    { meta, url, fetchOptions: cacheConfig.fetchOptions }
+                ));
+                if (!meta) {
                     reject(new Error('Cache refresh timed-out and there is no cached version to serve yet.'));
                 }
-                resolve(metaRecord);
+                resolve(meta);
             }, cacheConfig.timeout);
 
             refreshPromise
