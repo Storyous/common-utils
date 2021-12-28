@@ -153,7 +153,10 @@ const getKeyResolver = (cacheConfig, key, url) => {
         const refreshResult = await new Promise((resolve, reject) => {
 
             const timeoutId = setTimeout(() => {
-                cacheConfig.logError(new Error('Loading of the content timed out.'));
+                cacheConfig.logError(new AppError(
+                    'Loading of the content timed out.',
+                    { meta, url, fetchOptions: cacheConfig.fetchOptions }
+                ));
                 if (!meta) {
                     reject(new Error('Cache refresh timed-out and there is no cached version to serve yet.'));
                 }
