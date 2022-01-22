@@ -45,7 +45,7 @@
     "migrate": "^1.7.0",
     "moment": "^2.29.1",
     "mongodb": "^3.7.0",
-    "node-fetch": "^2.6.2",
+    "node-fetch": "^3.1.1",
     "nodemailer": "^4.7.0",
     "prom-client": "^11.5.3",
     "supertest": "^6.1.6",
