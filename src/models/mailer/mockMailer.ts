@@ -3,7 +3,7 @@
 const nodemailerMockTransport = require('nodemailer-mock-transport');
 const nodemailer = require('nodemailer');
 const mailer = require('./index');
-
+const { beforeEach, afterEach } = require('mocha');
 
 module.exports = {
 
@@ -15,15 +15,15 @@ module.exports = {
 
     _mockTransporter: null,
 
-    useForBlock (mocha: { beforeEach: (arg0: () => void) => void; afterEach: (arg0: () => void) => void; }) {
+    useForBlock () {
 
-        mocha.beforeEach(() => {
+        beforeEach(() => {
             this._originalTransporter = mailer._transporter;
             this._mockTransporter = nodemailerMockTransport();
             mailer._transporter = nodemailer.createTransport(this._mockTransporter);
         });
 
-        mocha.afterEach(() => {
+        afterEach(() => {
             mailer._transporter = this._originalTransporter;
         });
 

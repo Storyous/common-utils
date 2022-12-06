@@ -24,5 +24,13 @@ module.exports = {
             level: 'error',
             silent: false
         }
+    },
+
+    mailer: {
+        transporter: {
+            auth: {
+                user: 'from@saltpay.co',
+            }
+        }
     }
 };
