@@ -2,7 +2,7 @@
 
 const nodemailerMockTransport = require('nodemailer-mock-transport');
 const nodemailer = require('nodemailer');
-const mailer = require('./index');
+const mailer = require('../lib/models/mailer');
 const { beforeEach, afterEach } = require('mocha');
 
 module.exports = {

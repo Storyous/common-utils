@@ -4,7 +4,7 @@ require('./config/index'); // eslint-disable-line import/order
 const { describe, it } = require('mocha');
 const assert = require('assert');
 const mailer = require('../lib/models/mailer');
-const mockMailer = require('../lib/models/mailer/mockMailer');
+const mockMailer = require('./mockMailer');
 
 describe('mailer', () => {
 
