@@ -1,6 +1,6 @@
 {
   "name": "@storyous/common-utils",
-  "version": "16.9.1",
+  "version": "17.0.0",
   "description": "Common utils for storyous microservices",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -30,7 +30,7 @@
   "license": "ISC",
   "dependencies": {
     "@sentry/node": "^6.13.3",
-    "@storyous/storyous-jwt": "^2.0.0",
+    "@storyous/storyous-jwt": "^2.0.3",
     "@types/lodash": "^4.14.172",
     "@types/mongodb": "^3.6.20",
     "@types/node-fetch": "^2.5.12",
