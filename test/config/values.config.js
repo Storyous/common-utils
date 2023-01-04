@@ -6,7 +6,7 @@ module.exports = {
     debugEnabled: false,
     production: false,
 
-    mongodbUrl: 'mongodb://127.0.0.1:27017/common-utils-testing',
+    mongodbUrl: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/common-utils-testing',
 
     logging: {
         console: {

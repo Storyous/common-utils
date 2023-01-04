@@ -164,6 +164,11 @@ array with migrations. Remove safeMigration (or set it as true) when migrations
 are successful in all envs
 ```runMigrations(`${__dirname}/migrations`, {safeMigration: false});```
 
+### 17.0.0
+Requires at least Node.js 12.
+
+Private key for JWT (RS256) hast to have at least 2048 bits.
+
 ## MongoCachedFetcher
 
 ### Usage:  
