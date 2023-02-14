@@ -169,6 +169,10 @@ Requires at least Node.js 12.
 
 Private key for JWT (RS256) hast to have at least 2048 bits.
 
+### 18.0.0
+Private key for JWT (RS256) has to have at least 4096 bits for Node 18+
+
+
 ## MongoCachedFetcher
 
 ### Usage:  
