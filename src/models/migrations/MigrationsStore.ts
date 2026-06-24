@@ -2,6 +2,7 @@
 
 import _ from 'lodash';
 import appData from '../appData';
+
 const log = require('../log');
 
 const DOCUMENT_ID = 'migrations';
@@ -11,7 +12,7 @@ type DoneCallback = (err: unknown|null, state?: unknown) => void;
 const safeMigrationMsg = 'safeMigration is true, we do not allow empty migrations to be saved. ' +
     'If this is new project, feel free to enable it';
 
-function checkValidMigrations(objWithMigrations: { migrations: any; }) {
+function checkValidMigrations (objWithMigrations: { migrations: unknown } | null) {
     if (
         !objWithMigrations ||
         _.isEmpty(objWithMigrations.migrations) ||
@@ -24,19 +25,19 @@ function checkValidMigrations(objWithMigrations: { migrations: any; }) {
 class MigrationsStore {
     safeMigration: boolean;
 
-    constructor(safeMigration: boolean) {
+    constructor (safeMigration: boolean) {
         this.safeMigration = safeMigration;
     }
 
     save (set: Object, done: DoneCallback) {
         try {
-            log.info('Migration SET', set)
+            log.info('Migration SET', set);
             const objToUpdate: any = _.pick(set, ['lastRun', 'migrations']);
             if (this.safeMigration) {
                 checkValidMigrations(objToUpdate);
 
                 const numOfValidMigrations = objToUpdate.migrations
-                    .reduce((prev: number, cur: { timestamp: any; }) => cur.timestamp ? prev + 1 : prev, 0);
+                    .reduce((prev: number, cur: { timestamp: unknown }) => (cur.timestamp ? prev + 1 : prev), 0);
 
                 // If all migrations are renewed=without timestamp (beside the first one that is trying to be applied)
                 // There can be something wrong
@@ -46,7 +47,7 @@ class MigrationsStore {
                 }
             }
 
-            appData.updateDocument(DOCUMENT_ID, {$set: objToUpdate}, true)
+            appData.updateDocument(DOCUMENT_ID, { $set: objToUpdate }, true)
                 .then((state) => {
                     done(null, state);
                 })

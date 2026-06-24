@@ -6,13 +6,15 @@ import concurrentTask from './concurrentTask';
 import errorHandler from './errorHandler';
 import filter from './filter';
 import fixtures from './fixtures';
-import { appData,
+import {
+    appData,
     log,
     mailer,
     Migration,
     MigrationsStore,
     prometheus,
     runMigrations,
+    RunMigrationsOptions,
     usageTracker
 } from './models';
 import middlewares from './middlewares';
@@ -31,8 +33,9 @@ import getCollection from './getCollection';
 import withTransaction from './withTransaction';
 import i18n from './i18n.js';
 import utils from './utils';
-import permissionHelper  from "./models/permissions";
-import jwtPermissions from "./models/jwtPermissions"
+import permissionHelper from './models/permissions';
+import jwtPermissions from './models/jwtPermissions';
+
 export {
     AppError,
     concurrentTask,
@@ -62,6 +65,7 @@ export {
     MigrationsStore,
     prometheus,
     runMigrations,
+    RunMigrationsOptions,
     usageTracker,
     utils,
     permissionHelper,
