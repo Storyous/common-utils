@@ -1,5 +1,14 @@
 # Common JS utils
 
+> [!WARNING]
+> **This repository was archived on 2026-10-02 and is no longer maintained.**
+>
+> It receives no bug fixes, security patches or new releases. Use [mono-utils](https://github.com/Storyous/mono-utils) instead.
+
+---
+
+_Everything below is the historical README, kept for reference only._
+
 ## Migration guide
 
 ### 4.4.2
